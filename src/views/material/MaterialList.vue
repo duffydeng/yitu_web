@@ -1,5 +1,26 @@
 <!-- by 7527189 2 0 -->
 <template>
+  <div class="material-list-container">
+    <!-- 左侧类别树 -->
+    <div class="category-tree-panel" :class="{ 'collapsed': categoryTreeCollapsed }">
+      <div class="category-tree-header" @click="toggleCategoryTree">
+        <a-icon :type="categoryTreeCollapsed ? 'right' : 'left'" />
+        <span v-if="!categoryTreeCollapsed">类别</span>
+      </div>
+      <div v-if="!categoryTreeCollapsed" class="category-tree-content">
+        <a-tree
+          :treeData="categoryTreeForSelect"
+          :expandedKeys="categoryExpandedKeys"
+          @expand="onCategoryExpand"
+          @select="onCategoryTreeSelect"
+          :selectedKeys="categorySelectedKeys"
+          :defaultExpandAll="false"
+        >
+        </a-tree>
+      </div>
+    </div>
+    <!-- 右侧主内容区 -->
+    <div class="material-content-panel">
   <a-row :gutter="24">
     <a-col :md="24">
       <a-card :style="cardStyle" :bordered="false">
@@ -188,6 +209,8 @@
       </a-card>
     </a-col>
   </a-row>
+    </div>
+  </div>
 </template>
 <script>
   import MaterialModal from './modules/MaterialModal'
@@ -214,6 +237,10 @@
     data () {
       return {
         categoryTree:[],
+        categoryTreeForSelect: [],
+        categoryTreeCollapsed: false,
+        categoryExpandedKeys: [],
+        categorySelectedKeys: [],
         mPropertyListShort: '',
         model: {},
         labelCol: {
@@ -260,22 +287,21 @@
             title: '操作',
             dataIndex: 'action',
             align:"center",
-            width: 100,
             scopedSlots: { customRender: 'action' },
           },
-          {title: '图片', dataIndex: 'pic', width: 60, scopedSlots: { customRender: 'customPic' }},
-          {title: '条码', dataIndex: 'mBarCode', width: 120},
-          {title: '名称', dataIndex: 'name', width: 160, scopedSlots: { customRender: 'customName' }},
-          {title: '规格', dataIndex: 'standard', width: 120},
-          {title: '型号', dataIndex: 'model', width: 120},
-          {title: '颜色', dataIndex: 'color', width: 70, ellipsis:true},
-          {title: '品牌', dataIndex: 'brand', width: 100, ellipsis:true},
-          {title: '助记码', dataIndex: 'mnemonic', width: 80, ellipsis:true},
-          {title: '类别', dataIndex: 'categoryName', width: 100, ellipsis:true},
-          {title: '扩展1', dataIndex: 'otherField1', width: 100, ellipsis:true},
-          {title: '扩展2', dataIndex: 'otherField2', width: 100, ellipsis:true},
-          {title: '扩展3', dataIndex: 'otherField3', width: 100, ellipsis:true},
-          {title: '单位', dataIndex: 'unit', width: 100, ellipsis:true,
+          {title: '图片', dataIndex: 'pic', scopedSlots: { customRender: 'customPic' }},
+          {title: '条码', dataIndex: 'mBarCode'},
+          {title: '名称', dataIndex: 'name', scopedSlots: { customRender: 'customName' }},
+          {title: '规格', dataIndex: 'standard'},
+          {title: '型号', dataIndex: 'model'},
+          {title: '颜色', dataIndex: 'color', ellipsis:true},
+          {title: '品牌', dataIndex: 'brand', ellipsis:true},
+          {title: '助记码', dataIndex: 'mnemonic', ellipsis:true},
+          {title: '类别', dataIndex: 'categoryName', ellipsis:true},
+          {title: '扩展1', dataIndex: 'otherField1', ellipsis:true},
+          {title: '扩展2', dataIndex: 'otherField2', ellipsis:true},
+          {title: '扩展3', dataIndex: 'otherField3', ellipsis:true},
+          {title: '单位', dataIndex: 'unit', ellipsis:true,
             customRender:function (t,r,index) {
               if (r) {
                 let name = t?t:r.unitName
@@ -287,22 +313,22 @@
               }
             }
           },
-          {title: '基础重量', dataIndex: 'weight', width: 80},
-          {title: '保质期', dataIndex: 'expiryNum', width: 60},
-          {title: '制造商', dataIndex: 'mfrs', width: 120, ellipsis:true},
-          {title: '初始库存', dataIndex: 'initialStock', width: 80,
+          {title: '基础重量', dataIndex: 'weight'},
+          {title: '保质期', dataIndex: 'expiryNum'},
+          {title: '制造商', dataIndex: 'mfrs', ellipsis:true},
+          {title: '初始库存', dataIndex: 'initialStock',
             scopedSlots: { customRender: 'customRenderInitialStock' }
           },
-          {title: '库存', dataIndex: 'stock', width: 80,
+          {title: '库存', dataIndex: 'stock',
             scopedSlots: { customRender: 'customRenderStock' }
           },
-          {title: '采购价', dataIndex: 'purchaseDecimal', width: 80},
-          {title: '零售价', dataIndex: 'commodityDecimal', width: 80},
-          {title: '销售价', dataIndex: 'wholesaleDecimal', width: 80},
-          {title: '最低售价', dataIndex: 'lowDecimal', width: 80},
-          {title: '仓位货架', dataIndex: 'position', width: 80},
-          {title: '备注', dataIndex: 'remark', width: 80},
-          {title: '状态', dataIndex: 'enabled', align: "center", width: 60,
+          {title: '采购价', dataIndex: 'purchaseDecimal'},
+          {title: '零售价', dataIndex: 'commodityDecimal'},
+          {title: '销售价', dataIndex: 'wholesaleDecimal'},
+          {title: '最低售价', dataIndex: 'lowDecimal'},
+          {title: '仓位货架', dataIndex: 'position'},
+          {title: '备注', dataIndex: 'remark'},
+          {title: '状态', dataIndex: 'enabled', align: "center",
             scopedSlots: { customRender: 'customRenderEnabled' }
           }
         ],
@@ -362,12 +388,56 @@
         queryMaterialCategoryTreeList(params).then((res)=>{
           if(res){
             that.categoryTree = [];
+            that.categoryTreeForSelect = [];
+            // 处理类别树，只显示两级
             for (let i = 0; i < res.length; i++) {
-              let temp = res[i];
+              let temp = JSON.parse(JSON.stringify(res[i])); // 深拷贝
               that.categoryTree.push(temp);
+              // 处理用于选择的树，只保留两级
+              let formattedNode = that.formatCategoryTreeNode(temp, 1);
+              that.categoryTreeForSelect.push(formattedNode);
             }
           }
         })
+      },
+      // 格式化类别树节点，只显示两级
+      formatCategoryTreeNode(node, level) {
+        if (!node) return null;
+        let formatted = {
+          key: node.key || node.id,
+          title: node.title || node.name,
+          value: node.value || node.id,
+          scopedSlots: { title: 'custom' }
+        };
+        // 只保留两级
+        if (level === 1 && node.children && node.children.length > 0) {
+          formatted.children = node.children.map(child => this.formatCategoryTreeNode(child, 2));
+        } else {
+          formatted.children = undefined;
+        }
+        return formatted;
+      },
+      // 类别树展开事件
+      onCategoryExpand(expandedKeys) {
+        this.categoryExpandedKeys = expandedKeys;
+      },
+      // 类别树选择事件
+      onCategoryTreeSelect(selectedKeys, e) {
+        if (selectedKeys && selectedKeys.length > 0) {
+          this.categorySelectedKeys = selectedKeys;
+          // 设置查询条件
+          this.queryParam.categoryId = selectedKeys[0];
+          // 自动查询
+          this.searchQuery();
+        } else {
+          this.categorySelectedKeys = [];
+          this.queryParam.categoryId = undefined;
+          this.searchQuery();
+        }
+      },
+      // 切换类别树折叠状态
+      toggleCategoryTree() {
+        this.categoryTreeCollapsed = !this.categoryTreeCollapsed;
       },
       batchSetMaterialCurrentStock () {
         if (this.selectedRowKeys.length <= 0) {
@@ -489,9 +559,68 @@
   }
 </script>
 <style scoped>
-  @import '~@assets/less/common.less'
-</style>
-<style>
+  @import '~@assets/less/common.less';
+  
+  .material-list-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  
+  .category-tree-panel {
+    width: 250px;
+    min-width: 250px;
+    background: #fff;
+    border-right: 1px solid #e8e8e8;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .category-tree-panel.collapsed {
+    width: 40px;
+    min-width: 40px;
+  }
+  
+  .category-tree-header {
+    height: 48px;
+    line-height: 48px;
+    padding: 0 12px;
+    border-bottom: 1px solid #e8e8e8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    background: #fafafa;
+  }
+  
+  .category-tree-header:hover {
+    background: #f0f0f0;
+  }
+  
+  .category-tree-header i {
+    font-size: 16px;
+    color: #666;
+  }
+  
+  .category-tree-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  
+  .category-tree-panel.collapsed .category-tree-content {
+    display: none;
+  }
+  
+  .material-content-panel {
+    flex: 1;
+    min-width: 0;
+    padding-left: 12px;
+  }
+  
   .item-info {
     float:left;
     width:38px;
