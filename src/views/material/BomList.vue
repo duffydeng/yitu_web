@@ -100,9 +100,11 @@
 
 <script>
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
+  import { getMpListShort } from "@/utils/util"
   import JEditableTable from '@/components/jeecg/JEditableTable'
   import { FormTypes } from '@/utils/JEditableTableUtil'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
+   import JEllipsis from '@/components/jeecg/JEllipsis'
   import { getAction, postAction } from '@/api/manage'
 
   export default {
@@ -129,7 +131,8 @@
         queryParam: {
           materialParam: '',
           hasBom: undefined,
-          mpList: getMpListShort(Vue.ls.get('materialPropertyList'))
+          // mpList: getMpListShort(Vue.ls.get('materialPropertyList')),
+          mpList: []
         },
         urlPath: '/material/bom',
         url: {
@@ -177,6 +180,7 @@
           { title: '单位', dataIndex: 'unit', width: 60 }
         ]
       },
+
       onSelectChange(selectedRowKeys, selectedRows) {
         this.selectedRowKeys = selectedRowKeys;
         this.selectionRows = selectedRows;
