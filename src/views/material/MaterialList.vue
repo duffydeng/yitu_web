@@ -44,36 +44,6 @@
                   </a-form-item>
                 </a-col>
                 <a-col :md="6" :sm="24">
-                  <a-form-item label="颜色" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                    <a-input placeholder="请输入颜色查询" v-model="queryParam.color"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="24">
-                  <a-form-item label="品牌" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                    <a-input placeholder="请输入品牌查询" v-model="queryParam.brand"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="24">
-                  <a-form-item label="制造商" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                    <a-input placeholder="请输入制造商查询" v-model="queryParam.mfrs"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="24">
-                  <a-form-item :label="queryTitle.mp1" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                    <a-input :placeholder="'请输入'+ queryTitle.mp1 +'查询'" v-model="queryParam.otherField1"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="24">
-                  <a-form-item :label="queryTitle.mp2" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                    <a-input :placeholder="'请输入'+ queryTitle.mp2 +'查询'" v-model="queryParam.otherField2"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="24">
-                  <a-form-item :label="queryTitle.mp3" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                    <a-input :placeholder="'请输入'+ queryTitle.mp3 +'查询'" v-model="queryParam.otherField3"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="24">
                   <a-form-item label="状态" :labelCol="labelCol" :wrapperCol="wrapperCol">
                     <a-select placeholder="请选择状态" v-model="queryParam.enabled">
                       <a-select-option value="1">启用</a-select-option>
@@ -264,12 +234,6 @@
           materialParam:'',
           standard:'',
           model:'',
-          color:'',
-          brand:'',
-          mfrs:'',
-          otherField1:'',
-          otherField2:'',
-          otherField3:'',
           weight:'',
           expiryNum:'',
           enabled: undefined,

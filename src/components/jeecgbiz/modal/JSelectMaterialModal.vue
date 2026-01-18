@@ -53,40 +53,10 @@
             <template v-if="toggleSearchStatus">
               <a-row :gutter="24">
                 <a-col :md="6" :sm="8">
-                  <a-form-item label="颜色" :labelCol="{span: 5}" :wrapperCol="{span: 18, offset: 1}">
-                    <a-input placeholder="请输入颜色" v-model="queryParam.color"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="8">
-                  <a-form-item label="品牌" :labelCol="{span: 5}" :wrapperCol="{span: 18, offset: 1}">
-                    <a-input placeholder="请输入品牌" v-model="queryParam.brand"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="8">
                   <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="类别">
                     <a-tree-select style="width:100%" :dropdownStyle="{maxHeight:'200px',overflow:'auto'}" allow-clear
                                    :treeData="categoryTree" v-model="queryParam.categoryId" placeholder="请选择类别">
                     </a-tree-select>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="8">
-                  <a-form-item label="制造商" :labelCol="{span: 5}" :wrapperCol="{span: 18, offset: 1}">
-                    <a-input placeholder="请输入制造商" v-model="queryParam.mfrs"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="8">
-                  <a-form-item :label="queryTitle.mp1" :labelCol="{span: 5}" :wrapperCol="{span: 18, offset: 1}">
-                    <a-input :placeholder="'请输入'+ queryTitle.mp1" v-model="queryParam.otherField1"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="8">
-                  <a-form-item :label="queryTitle.mp2" :labelCol="{span: 5}" :wrapperCol="{span: 18, offset: 1}">
-                    <a-input :placeholder="'请输入'+ queryTitle.mp2" v-model="queryParam.otherField2"></a-input>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="6" :sm="8">
-                  <a-form-item :label="queryTitle.mp3" :labelCol="{span: 5}" :wrapperCol="{span: 18, offset: 1}">
-                    <a-input :placeholder="'请输入'+ queryTitle.mp3" v-model="queryParam.otherField3"></a-input>
                   </a-form-item>
                 </a-col>
                 <a-col :md="6" :sm="24">
@@ -171,13 +141,7 @@
           q: '',
           standardOrModel: '',
           depotId: undefined,
-          color: '',
-          brand: '',
           categoryId: undefined,
-          mfrs: '',
-          otherField1:'',
-          otherField2:'',
-          otherField3:'',
           enableSerialNumber: undefined,
           enableBatchNumber: undefined
         },
@@ -270,11 +234,11 @@
         }
         this.loading = true
         let params = this.getQueryParams()//查询条件
-        getMaterialBySelect(params).then((res) => {
-          if (res) {
-            this.dataSource = res.rows
-            this.ipagination.total = res.total
-            if(res.total ===1) {
+        getAction('/material/list', params).then((res) => {
+          if (res.code === 200) {
+            this.dataSource = res.data.rows || []
+            this.ipagination.total = res.data.total || 0
+            if(this.ipagination.total === 1) {
               if(this.queryParam.q === this.dataSource[0].mBarCode||
                 this.queryParam.q === this.dataSource[0].name||
                 this.queryParam.q === this.dataSource[0].mnemonic) {
@@ -286,7 +250,12 @@
             } else {
               this.title = '选择商品'
             }
+          } else {
+            this.$message.warning(res.data || '查询失败')
           }
+          this.loading = false
+          this.onClearSelected()
+        }).catch(() => {
           this.loading = false
           this.onClearSelected()
         })
