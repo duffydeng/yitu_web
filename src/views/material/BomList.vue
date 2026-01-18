@@ -67,9 +67,28 @@
           </a-form>
           <a-tabs default-active-key="1">
             <a-tab-pane key="1" tab="1、所需物料">
+              <div style="margin-bottom: 16px;">
+                <a-form layout="inline">
+                  <a-form-item label="版本号">
+                    <a-select
+                      v-model="bomQueryVersion"
+                      placeholder="请选择版本号"
+                      allow-clear
+                      showSearch
+                      optionFilterProp="children"
+                      style="width: 200px"
+                      @change="handleVersionFilterChange"
+                    >
+                      <a-select-option v-for="version in bomVersionList" :key="version" :value="version">
+                        {{ version }}
+                      </a-select-option>
+                    </a-select>
+                  </a-form-item>
+                </a-form>
+              </div>
               <div class="table-operator">
                 <a-button @click="handleAdd" type="primary" icon="plus">新增</a-button>
-                <a-button @click="handleExportXls('BOM清单')" icon="download">导出</a-button>
+                <a-button @click="handleBomExportXls('BOM清单')" icon="download">导出</a-button>
                 <a-button @click="handleJEditableTableDelete" icon="delete">删除</a-button>
                 <a-button @click="handleSave" type="primary" icon="save">保存</a-button>
                 <a-button @click="handleImport" icon="import">BOM导入</a-button>
@@ -96,6 +115,9 @@
                     @change="(value) => handleQtyChange(value, record)"
                   />
                 </template>
+                <template slot="materialNameRender" slot-scope="text, record">
+                  <a @click="handleMaterialNameClick(record)" style="color: #1890ff; cursor: pointer;">{{ text }}</a>
+                </template>
               </a-table>
             </a-tab-pane>
             <a-tab-pane key="2" tab="2、生产工序" force-render>
@@ -109,6 +131,7 @@
       </a-card>
     </div>
     <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
+    <import-file-modal ref="bomImportModal" @ok="bomImportOk"></import-file-modal>
     <!-- 版本选择模态框 -->
     <a-modal
       title="选择版本号"
@@ -136,6 +159,91 @@
         </a-form-item>
       </a-form>
     </a-modal>
+    <!-- BOM详情弹窗 -->
+    <a-modal
+      title="详情"
+      :visible="bomDetailModalVisible"
+      :width="1000"
+      @ok="handleBomDetailConfirm"
+      @cancel="handleBomDetailCancel"
+      okText="确定"
+      cancelText="关闭"
+      :maskClosable="false"
+    >
+      <a-form :form="bomDetailForm" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
+        <a-row :gutter="24">
+          <a-col :span="12">
+            <a-form-item label="条码">
+              <a-input v-decorator="['barCode']" read-only style="border: none; box-shadow: none;" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="名称">
+              <a-input v-decorator="['name']" read-only style="border: none; box-shadow: none;" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="24">
+          <a-col :span="12">
+            <a-form-item label="单位">
+              <a-input v-decorator="['unit']" read-only style="border: none; box-shadow: none;" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="采购价">
+              <a-input v-decorator="['purchaseDecimal']" read-only style="border: none; box-shadow: none;" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="24">
+          <a-col :span="12">
+            <a-form-item label="*数量">
+              <a-input-number
+                v-decorator="['qty', { rules: [{ required: true, message: '请输入数量' }], initialValue: 1 }]"
+                :min="0"
+                :precision="0"
+                style="width: 100%"
+                @change="handleDetailQtyChange"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="费用">
+              <a-input v-decorator="['totalPrice']" read-only style="border: none; box-shadow: none;" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="24">
+          <a-col :span="12">
+            <a-form-item label="备注">
+              <a-input v-decorator="['remark']" placeholder="请输入备注" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+      </a-form>
+      <a-table
+        :columns="bomDetailColumns"
+        :dataSource="bomDetailDataSource"
+        :pagination="false"
+        :scroll="bomDetailScroll"
+        size="middle"
+        bordered
+        rowKey="id"
+      >
+        <template slot="emptyText">
+          <a-empty description="暂无数据" />
+        </template>
+        <template slot="detailQtyRender" slot-scope="text, record">
+          <a-input-number
+            :value="text"
+            :min="0"
+            :precision="0"
+            style="width: 100%"
+            @change="(value) => handleDetailTableQtyChange(value, record)"
+          />
+        </template>
+      </a-table>
+    </a-modal>
   </div>
 </template>
 
@@ -145,8 +253,9 @@
   import JEditableTable from '@/components/jeecg/JEditableTable'
   import { FormTypes } from '@/utils/JEditableTableUtil'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
-   import JEllipsis from '@/components/jeecg/JEllipsis'
-  import { getAction, postAction } from '@/api/manage'
+  import JEllipsis from '@/components/jeecg/JEllipsis'
+  import ImportFileModal from '@/components/tools/ImportFileModal'
+  import { getAction, postAction, downFile } from '@/api/manage'
 
   export default {
     name: "BomList",
@@ -154,7 +263,8 @@
     components: {
       JEditableTable,
       JSelectMaterialModal,
-      JEllipsis
+      JEllipsis,
+      ImportFileModal
     },
     data () {
       return {
@@ -199,7 +309,7 @@
             }
           },
           { title: '条码', dataIndex: 'barCode', width: 120 },
-          { title: '名称', dataIndex: 'materialName', width: 200, ellipsis: true },
+          { title: '名称', dataIndex: 'materialName', width: 200, ellipsis: true, scopedSlots: { customRender: 'materialNameRender' } },
           { title: '规格', dataIndex: 'standard', width: 120 },
           { title: '型号', dataIndex: 'model', width: 120 },
           { title: '单位', dataIndex: 'unit', width: 80 },
@@ -229,13 +339,37 @@
           batchAdd: '/bomList/batchAdd',
           delete: '/bomList/delete',
           deleteBatch: '/bomList/deleteBatch',
-          getVersionList: '/bomList/getVersionList'
+          getVersionList: '/bomList/getVersionList',
+          exportExcel: '/bomList/exportExcel',
+          importExcel: '/bomList/importExcel'
         },
         // 版本选择相关
         versionModalVisible: false,
         versionList: [],
         selectedVersion: '1.0',
         pendingBatchData: null,
+        // BOM列表查询版本号相关
+        bomQueryVersion: undefined,
+        bomVersionList: [],
+        // BOM详情弹窗相关
+        bomDetailModalVisible: false,
+        bomDetailForm: {},
+        bomDetailData: {},
+        bomDetailDataSource: [],
+        bomDetailColumns: [
+          { title: '条码', dataIndex: 'barCode', width: 120 },
+          { title: '名称', dataIndex: 'materialName', width: 200, ellipsis: true },
+          { title: '规格', dataIndex: 'standard', width: 120 },
+          { title: '型号', dataIndex: 'model', width: 120 },
+          { title: '单位', dataIndex: 'unit', width: 80 },
+          { title: '销售单价', dataIndex: 'wholesaleDecimal', width: 100 },
+          { title: '采购单价', dataIndex: 'purchaseDecimal', width: 100 },
+          { title: '数量', dataIndex: 'qty', width: 100, scopedSlots: { customRender: 'detailQtyRender' } },
+          { title: '成本', dataIndex: 'totalPrice', width: 100 },
+          { title: '版本号', dataIndex: 'version', width: 100 },
+          { title: '备注', dataIndex: 'remark', width: 150 }
+        ],
+        bomDetailScroll: { x: 1200 },
         // 拖拽相关
         leftWidth: 40, // 左侧面板宽度百分比，默认40%
         isDragging: false
@@ -243,6 +377,7 @@
     },
     created() {
       this.initColumnsSetting()
+      this.bomDetailForm = this.$form.createForm(this)
     },
     mounted() {
       this.initBomScroll()
@@ -304,11 +439,39 @@
         this.selectedRowKeys = [record.id]
         this.selectionRows = [record]
         this.selectedMaterial = record
+        this.bomQueryVersion = undefined // 重置版本查询条件
+        this.loadBomVersionList()
         this.loadBomData(record.id)
+      },
+      // 加载BOM列表的版本号下拉选项
+      loadBomVersionList() {
+        if (!this.selectedMaterial || !this.selectedMaterial.id) {
+          this.bomVersionList = []
+          return
+        }
+        getAction(this.bomUrl.getVersionList, { id: this.selectedMaterial.id }).then(res => {
+          if (res.code === 200) {
+            // 接口返回的数据可能是 {versionList: [...]} 格式，优先取versionList字段
+            this.bomVersionList = (res.data && res.data.versionList) ? res.data.versionList : (res.data || [])
+          } else {
+            this.bomVersionList = []
+          }
+        }).catch(() => {
+          this.bomVersionList = []
+        })
+      },
+      // 版本号过滤变化
+      handleVersionFilterChange() {
+        this.loadBomData(this.selectedMaterial.id)
       },
       loadBomData(materialId) {
         this.bomLoading = true
-        getAction(this.bomUrl.list, { id: materialId }).then(res => {
+        let params = { id: materialId }
+        // 如果选择了版本号查询条件，添加version参数
+        if (this.bomQueryVersion) {
+          params.version = this.bomQueryVersion
+        }
+        getAction(this.bomUrl.list, params).then(res => {
           if (res.code === 200) {
             let data = res.data.rows || res.data
             // 后端已返回所有字段，无需额外计算
@@ -426,7 +589,52 @@
         })
       },
       handleImport() {
-        this.$message.info('BOM导入功能待开发')
+        if(!this.selectedMaterial.id){
+          this.$message.warning('请先在左侧选择一个商品！')
+          return
+        }
+        this.$refs.bomImportModal.initModal(
+          this.bomUrl.importExcel,
+          '/doc/bomList_template.xls',
+          'BOM导入模板'
+        )
+      },
+      bomImportOk() {
+        // 导入成功后刷新数据
+        this.loadBomData(this.selectedMaterial.id)
+        this.searchQuery() // 刷新左侧列表的BOM状态
+      },
+      // 重写导出方法，使用BOM的导出接口
+      handleBomExportXls(fileName) {
+        if(!this.selectedMaterial.id){
+          this.$message.warning('请先在左侧选择一个商品！')
+          return
+        }
+        if (!fileName || typeof fileName != "string") {
+          fileName = "BOM清单"
+        }
+        let param = {
+          id: this.selectedMaterial.id
+        }
+        downFile(this.bomUrl.exportExcel, param).then((data) => {
+          if (!data) {
+            this.$message.warning("文件下载失败")
+            return
+          }
+          if (typeof window.navigator.msSaveBlob !== 'undefined') {
+            window.navigator.msSaveBlob(new Blob([data],{type: 'application/vnd.ms-excel'}), fileName+'.xls')
+          } else {
+            let url = window.URL.createObjectURL(new Blob([data],{type: 'application/vnd.ms-excel'}))
+            let link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = url
+            link.setAttribute('download', fileName + '_' + new Date().getTime()+'.xls')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          }
+        })
       },
       onBomSelectChange(selectedRowKeys) {
         this.bomSelectedRowKeys = selectedRowKeys
@@ -440,6 +648,107 @@
           this.$set(this.bomDataSource[index], 'qty', value)
           this.$set(this.bomDataSource[index], 'totalPrice', totalPrice)
         }
+      },
+      // 点击名称打开详情弹窗
+      handleMaterialNameClick(record) {
+        // 使用materialId查询详情，如果没有materialId则使用id
+        const materialId = record.materialId || record.id
+        if (!materialId) {
+          this.$message.warning('商品ID不存在')
+          return
+        }
+        this.bomDetailModalVisible = true
+        this.bomDetailData = record
+        // 设置表单初始值
+        this.$nextTick(() => {
+          this.bomDetailForm.setFieldsValue({
+            barCode: record.barCode || '',
+            name: record.materialName || '',
+            unit: record.unit || '',
+            purchaseDecimal: record.purchaseDecimal || 0,
+            qty: record.qty || 1,
+            totalPrice: record.totalPrice || 0,
+            remark: record.remark || ''
+          })
+        })
+        // 加载详情列表，使用 /bomList/list 接口
+        this.loadBomDetailList(materialId)
+      },
+      // 加载BOM详情列表
+      loadBomDetailList(materialId) {
+        getAction(this.bomUrl.list, { id: materialId }).then(res => {
+          if (res.code === 200) {
+            let data = res.data.rows || res.data
+            this.bomDetailDataSource = Array.isArray(data) ? data : []
+          } else {
+            this.$message.warning(res.data || '获取详情失败')
+            this.bomDetailDataSource = []
+          }
+        }).catch(() => {
+          this.bomDetailDataSource = []
+        })
+      },
+      // 详情弹窗数量变化
+      handleDetailQtyChange(value) {
+        const purchaseDecimal = this.bomDetailForm.getFieldValue('purchaseDecimal') || 0
+        const totalPrice = (value * purchaseDecimal).toFixed(2)
+        this.bomDetailForm.setFieldsValue({
+          totalPrice: totalPrice
+        })
+      },
+      // 详情弹窗确认（与列表保存按钮逻辑一致）
+      handleBomDetailConfirm() {
+        if(!this.bomDetailData.materialId && !this.bomDetailData.id){
+          this.$message.warning('商品ID不存在！')
+          return
+        }
+        const materialId = this.bomDetailData.materialId || this.bomDetailData.id
+        if (!this.bomDetailDataSource || this.bomDetailDataSource.length === 0) {
+          this.$message.warning('没有可保存的数据！')
+          return
+        }
+        // 提取 id、qty 和计算后的成本 totalPrice，批量传入（与handleSave逻辑一致）
+        let rows = this.bomDetailDataSource.map(item => ({
+          id: item.id,
+          qty: item.qty || 1,
+          totalPrice: item.totalPrice || 0
+        }))
+        let params = {
+          rows: JSON.stringify(rows)
+        }
+        this.bomLoading = true
+        postAction(this.bomUrl.add, params).then(res => {
+          if (res.code === 200) {
+            let message = res.data && res.data.message ? res.data.message : (res.data || '保存成功')
+            this.$message.success(message)
+            // 关闭弹窗并刷新列表
+            this.bomDetailModalVisible = false
+            this.loadBomData(this.selectedMaterial.id)
+            this.loadBomDetailList(materialId) // 如果弹窗还打开，刷新详情列表
+          } else {
+            let errorMsg = res.data && res.data.message ? res.data.message : (res.data || '保存失败')
+            this.$message.error(errorMsg)
+          }
+        }).finally(() => {
+          this.bomLoading = false
+        })
+      },
+      // 详情弹窗表格中数量变化
+      handleDetailTableQtyChange(value, record) {
+        // 当数量变化时，使用采购单价计算总价（成本）
+        let totalPrice = (value * (record.purchaseDecimal || 0)).toFixed(2)
+        // 更新数据源中的数量和总价
+        const index = this.bomDetailDataSource.findIndex(item => item.id === record.id)
+        if (index !== -1) {
+          this.$set(this.bomDetailDataSource[index], 'qty', value)
+          this.$set(this.bomDetailDataSource[index], 'totalPrice', totalPrice)
+        }
+      },
+      // 详情弹窗取消
+      handleBomDetailCancel() {
+        this.bomDetailModalVisible = false
+        this.bomDetailForm.resetFields()
+        this.bomDetailDataSource = []
       },
       searchReset() {
         this.queryParam = {
