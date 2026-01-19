@@ -16,28 +16,25 @@
           <!-- 搜索区域 -->
           <a-form layout="inline" @keyup.enter.native="onSearch">
             <a-row :gutter="24">
-              <a-col :md="6" :sm="8">
+              <a-col :md="6" :sm="24">
+                <a-form-item label="类别" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                  <a-tree-select style="width:100%" :dropdownStyle="{maxHeight:'200px',overflow:'auto'}" allow-clear
+                   :treeData="categoryTree" v-model="queryParam.categoryId" placeholder="请选择类别">
+                  </a-tree-select>
+                </a-form-item>
+              </a-col>
+              <a-col :md="6" :sm="24">
                 <a-form-item label="关键词" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                  <a-input ref="material" placeholder="请输入条码、名称、助记码等查询" v-model="queryParam.q"></a-input>
+                  <a-input ref="material" placeholder="请输入条码、名称、助记码等查询" v-model="queryParam.materialParam"></a-input>
                 </a-form-item>
               </a-col>
-              <a-col :md="6" :sm="8">
-                <a-form-item label="规格型号" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                  <a-input placeholder="请输入规格、型号" v-model="queryParam.standardOrModel"></a-input>
-                </a-form-item>
-              </a-col>
-              <a-col :md="6" :sm="8">
-                <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="仓库">
-                  <a-select placeholder="选择仓库" v-model="queryParam.depotId" @change="onDepotChange"
-                    :dropdownMatchSelectWidth="false" showSearch optionFilterProp="children" allow-clear>
-                    <a-select-option v-for="(item,index) in depotList" :key="index" :value="item.id">
-                      {{ item.depotName }}
-                    </a-select-option>
-                  </a-select>
+              <a-col :md="6" :sm="24">
+                <a-form-item label="规格" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                  <a-input placeholder="请输入规格查询" v-model="queryParam.standard"></a-input>
                 </a-form-item>
               </a-col>
               <span style="float: left;overflow: hidden;" class="table-page-search-submitButtons">
-                <a-col :md="6" :sm="8">
+                <a-col :md="6" :sm="24">
                   <a-button type="primary" @click="loadMaterialData(1)">查询</a-button>
                   <a-button style="margin-left: 8px" @click="searchReset(1)">重置</a-button>
                   <a-tooltip title="没查询到，决定新增商品！">
@@ -52,11 +49,17 @@
             </a-row>
             <template v-if="toggleSearchStatus">
               <a-row :gutter="24">
-                <a-col :md="6" :sm="8">
-                  <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="类别">
-                    <a-tree-select style="width:100%" :dropdownStyle="{maxHeight:'200px',overflow:'auto'}" allow-clear
-                                   :treeData="categoryTree" v-model="queryParam.categoryId" placeholder="请选择类别">
-                    </a-tree-select>
+                <a-col :md="6" :sm="24">
+                  <a-form-item label="型号" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                    <a-input placeholder="请输入型号查询" v-model="queryParam.model"></a-input>
+                  </a-form-item>
+                </a-col>
+                <a-col :md="6" :sm="24">
+                  <a-form-item label="状态" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                    <a-select placeholder="请选择状态" v-model="queryParam.enabled">
+                      <a-select-option value="1">启用</a-select-option>
+                      <a-select-option value="0">禁用</a-select-option>
+                    </a-select>
                   </a-form-item>
                 </a-col>
                 <a-col :md="6" :sm="24">
@@ -68,11 +71,31 @@
                   </a-form-item>
                 </a-col>
                 <a-col :md="6" :sm="24">
-                  <a-form-item label="批号" :labelCol="{span: 5}" :wrapperCol="{span: 18, offset: 1}">
+                  <a-form-item label="批号" :labelCol="labelCol" :wrapperCol="wrapperCol">
                     <a-select placeholder="有无批号" v-model="queryParam.enableBatchNumber">
                       <a-select-option value="1">有</a-select-option>
                       <a-select-option value="0">无</a-select-option>
                     </a-select>
+                  </a-form-item>
+                </a-col>
+                <a-col :md="6" :sm="24">
+                  <a-form-item label="仓位货架" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                    <a-input style="width: 100%" placeholder="请输入仓位货架查询" v-model="queryParam.position"></a-input>
+                  </a-form-item>
+                </a-col>
+                <a-col :md="6" :sm="24">
+                  <a-form-item label="基础重量" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                    <a-input-number style="width: 100%" placeholder="请输入基础重量查询" v-model="queryParam.weight"></a-input-number>
+                  </a-form-item>
+                </a-col>
+                <a-col :md="6" :sm="24">
+                  <a-form-item label="保质期" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                    <a-input-number style="width: 100%" placeholder="请输入保质期查询" v-model="queryParam.expiryNum"></a-input-number>
+                  </a-form-item>
+                </a-col>
+                <a-col :md="6" :sm="24">
+                  <a-form-item label="备注" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                    <a-input placeholder="请输入备注查询" v-model="queryParam.remark"></a-input>
                   </a-form-item>
                 </a-col>
               </a-row>
@@ -138,20 +161,25 @@
           mp3: '扩展3'
         },
         queryParam: {
-          q: '',
-          standardOrModel: '',
-          depotId: undefined,
           categoryId: undefined,
+          materialParam:'',
+          standard:'',
+          model:'',
+          weight:'',
+          expiryNum:'',
+          enabled: undefined,
           enableSerialNumber: undefined,
-          enableBatchNumber: undefined
+          enableBatchNumber: undefined,
+          position: '',
+          remark:'',
+          mpList: getMpListShort(Vue.ls.get('materialPropertyList'))  //扩展属性
         },
         labelCol: {
-          xs: { span: 24 },
-          sm: { span: 5 },
+          span: 5
         },
         wrapperCol: {
-          xs: { span: 24 },
-          sm: { span: 16 },
+          span: 18,
+          offset: 1
         },
         categoryTree:[],
         columns: [
@@ -179,7 +207,7 @@
         ipagination: {
           current: 1,
           pageSize: 10,
-          pageSizeOptions: ['10', '20', '30'],
+          pageSizeOptions: ['10', '20', '30', '50', '100', '200'],
           showTotal: (total, range) => {
             return range[0] + '-' + range[1] + ' 共' + total + '条'
           },
@@ -192,7 +220,6 @@
           order: 'desc'
         },
         departTree: [],
-        depotList: [],
         visible: false,
         form: this.$form.createForm(this),
         loading: false,
@@ -233,23 +260,13 @@
           this.ipagination.current = 1;
         }
         this.loading = true
+        // 使用 JeecgListMixin 的 getQueryParams 方法，与左侧列表保持一致
         let params = this.getQueryParams()//查询条件
         getAction('/material/list', params).then((res) => {
           if (res.code === 200) {
             this.dataSource = res.data.rows || []
             this.ipagination.total = res.data.total || 0
-            if(this.ipagination.total === 1) {
-              if(this.queryParam.q === this.dataSource[0].mBarCode||
-                this.queryParam.q === this.dataSource[0].name||
-                this.queryParam.q === this.dataSource[0].mnemonic) {
-                this.title = '选择商品【再次回车可以直接选中】'
-                this.$nextTick(() => this.$refs.material.focus());
-              } else {
-                this.title = '选择商品'
-              }
-            } else {
-              this.title = '选择商品'
-            }
+            this.title = '选择商品'
           } else {
             this.$message.warning(res.data || '查询失败')
           }
@@ -311,21 +328,15 @@
       showModal(barCode) {
         this.visible = true;
         this.title = '选择商品'
-        this.queryParam.q = barCode
+        this.queryParam.materialParam = barCode
         this.$nextTick(() => this.$refs.material.focus());
         this.loadTreeData()
-        this.getDepotList()
-        this.initDepotSelect()
         this.loadMaterialData();
         this.form.resetFields();
       },
-      getQueryParams() {
-        let param = Object.assign({}, this.queryParam, this.isorter);
-        param.mpList = getMpListShort(Vue.ls.get('materialPropertyList'))  //扩展属性
-        param.page = this.ipagination.current;
-        param.rows = this.ipagination.pageSize;
-        return filterObj(param);
-      },
+      // 使用 JeecgListMixin 的 getQueryParams 方法，与左侧列表保持一致
+      // getQueryParams() 方法已在 JeecgListMixin 中定义，会自动将 queryParam 序列化为 search 字段
+      // 并使用 currentPage 和 pageSize 作为分页参数
       getQueryField() {
         let str = 'id,';
         for (let a = 0; a < this.columns.length; a++) {
@@ -336,7 +347,20 @@
       searchReset(num) {
         let that = this;
         if (num !== 0) {
-          that.queryParam = {};
+          that.queryParam = {
+            categoryId: undefined,
+            materialParam:'',
+            standard:'',
+            model:'',
+            weight:'',
+            expiryNum:'',
+            enabled: undefined,
+            enableSerialNumber: undefined,
+            enableBatchNumber: undefined,
+            position: '',
+            remark:'',
+            mpList: getMpListShort(Vue.ls.get('materialPropertyList'))  //扩展属性
+          };
           that.loadMaterialData(1);
         }
         that.selectedRowKeys = [];
@@ -390,43 +414,12 @@
         }
         this.selectMaterialIds = materialIds.substring(1);
       },
-      getDepotList() {
-        let that = this;
-        getAction('/depot/findDepotByCurrentUser').then((res) => {
-          if(res.code === 200){
-            that.depotList = res.data
-          }
-        })
-      },
-      initDepotSelect() {
-        if(this.rows) {
-          if(JSON.parse(this.rows).depotId){
-            this.queryParam.depotId = JSON.parse(this.rows).depotId-0
-          }
-        }
-      },
-      onDepotChange(value) {
-        this.queryParam.depotId = value
-      },
       onSelectChange(selectedRowKeys, selectionRows) {
         this.selectedRowKeys = selectedRowKeys;
         this.selectionRows = selectionRows;
       },
       onSearch() {
-        if(this.dataSource && this.dataSource.length===1) {
-          if(this.queryParam.q === this.dataSource[0].mBarCode||
-            this.queryParam.q === this.dataSource[0].name||
-            this.queryParam.q === this.dataSource[0].mnemonic) {
-            let arr = []
-            arr.push(this.dataSource[0].id)
-            this.selectedRowKeys = arr
-            this.handleSubmit()
-          } else {
-            this.loadMaterialData(1)
-          }
-        } else {
-          this.loadMaterialData(1)
-        }
+        this.loadMaterialData(1)
       },
       modalFormOk() {
         this.loadMaterialData()
@@ -435,10 +428,11 @@
         return {
           on: {
             dblclick: () => {
+              // 双击时只选中，不关闭页面
               let arr = []
               arr.push(record.id)
               this.selectedRowKeys = arr
-              this.handleSubmit()
+              this.getSelectMaterialRows()
             }
           }
         }
