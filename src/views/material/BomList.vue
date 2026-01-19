@@ -255,7 +255,7 @@
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
   import JEllipsis from '@/components/jeecg/JEllipsis'
   import ImportFileModal from '@/components/tools/ImportFileModal'
-  import { getAction, postAction, downFile } from '@/api/manage'
+  import { getAction, postAction, downFile, deleteAction } from '@/api/manage'
 
   export default {
     name: "BomList",
@@ -551,9 +551,27 @@
           this.$message.warning('请选择要删除的物料')
           return
         }
-        // 从数据源中删除选中的行
-        this.bomDataSource = this.bomDataSource.filter(item => !this.bomSelectedRowKeys.includes(item.id))
-        this.bomSelectedRowKeys = []
+        // 将选中的id用逗号拼接
+        let ids = this.bomSelectedRowKeys.join(',')
+        let that = this
+        this.$confirm({
+          title: '确认删除',
+          content: '确定要删除所选中的 ' + this.bomSelectedRowKeys.length + ' 条数据吗?',
+          onOk: function () {
+            that.bomLoading = true
+            deleteAction(that.bomUrl.deleteBatch, {ids: ids}).then((res) => {
+              if (res.code == 200) {
+                that.$message.success(res.data.message || '删除成功')
+                that.loadBomData(that.selectedMaterial.id)
+                that.bomSelectedRowKeys = []
+              } else {
+                that.$message.warning(res.data.message || '删除失败')
+              }
+            }).finally(() => {
+              that.bomLoading = false
+            })
+          }
+        })
       },
       handleSave() {
         if(!this.selectedMaterial.id){
