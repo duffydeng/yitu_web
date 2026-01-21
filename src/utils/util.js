@@ -104,6 +104,9 @@ function generateChildRouters (data) {
   for (let item of data) {
     let componentPath = "";
     item.route = "1";
+    if (item.component === '/stocktaking/list') {
+      item.component = '/bill/StocktakingList'
+    }
     if(item.component.indexOf("layouts")>=0){
       componentPath = () => import('@/components'+item.component);
     } else {
