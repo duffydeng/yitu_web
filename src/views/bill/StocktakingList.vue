@@ -220,7 +220,7 @@
         queryParam: {
           number: "",
           materialParam: "",
-          type: "入库",
+          type: "盘点",
           subType: "盘点",
           organId: undefined,
           depotId: undefined,
@@ -230,7 +230,7 @@
           remark: ""
         },
         prefixNo: 'PD',
-        urlPath: '/bill/stocktaking',
+        urlPath: '/bill/other_in',
         //出入库管理开关，适合独立仓管场景
         inOutManageFlag: false,
         labelCol: {
@@ -269,10 +269,10 @@
           }
         ],
         url: {
-          list: "/stocktaking/list",
-          delete: "/stocktaking/delete",
-          deleteBatch: "/stocktaking/deleteBatch",
-          batchSetStatusUrl: "/stocktaking/batchSetStatus"
+          list: "/depotHead/list",
+          delete: "/depotHead/delete",
+          deleteBatch: "/depotHead/deleteBatch",
+          batchSetStatusUrl: "/depotHead/batchSetStatus"
         }
       }
     },
@@ -283,24 +283,85 @@
       this.initSupplier()
       this.getDepotData()
       this.initUser()
-      this.initWaitBillCount('入库', '采购,销售退货', '1,3')
+      // 盘点单不需要待入库统计
+      // this.initWaitBillCount('盘点', '盘点', '1,3')
     },
     methods: {
+      // 重写新增方法，设置正确的type和subType
+      myHandleAdd() {
+        this.$refs.modalForm.action = "add";
+        if(this.btnEnableList.indexOf(2)===-1) {
+          this.$refs.modalForm.isCanCheck = false
+        }
+        // 设置盘点单的type和subType以及prefixNo
+        this.$refs.modalForm.billType = '盘点'
+        this.$refs.modalForm.billSubType = '盘点'
+        this.$refs.modalForm.prefixNo = 'PD'
+        this.handleAdd();
+      },
+      // 重写复制新增方法，设置正确的type和subType
+      myHandleCopyAdd(record) {
+        this.$refs.modalForm.action = "copyAdd";
+        if(this.btnEnableList.indexOf(2)===-1) {
+          this.$refs.modalForm.isCanCheck = false
+        }
+        //复制单据的时候需要移除关联单据的相关信息
+        record.linkNumber = ''
+        record.billType = ''
+        record.deposit = ''
+        // 设置盘点单的type和subType以及prefixNo
+        this.$refs.modalForm.billType = '盘点'
+        this.$refs.modalForm.billSubType = '盘点'
+        this.$refs.modalForm.prefixNo = 'PD'
+        this.$refs.modalForm.edit(record);
+        this.$refs.modalForm.title = "复制新增";
+        this.$refs.modalForm.disableSubmit = false;
+        //开启明细的编辑模式
+        this.$refs.modalForm.rowCanEdit = true
+        let columnIndex = record.subType === '组装单' || record.subType === '拆卸单'?2:1
+        const FormTypes = require('@/utils/JEditableTableUtil').FormTypes
+        this.$refs.modalForm.materialTable.columns[columnIndex].type = FormTypes.popupJsh
+      },
+      // 重写编辑方法，设置正确的type和subType
+      myHandleEdit(record) {
+        if(record.status === '0') {
+          this.$refs.modalForm.action = "edit";
+          if(this.btnEnableList.indexOf(2)===-1) {
+            this.$refs.modalForm.isCanCheck = false
+          }
+          // 设置盘点单的type和subType以及prefixNo
+          this.$refs.modalForm.billType = '盘点'
+          this.$refs.modalForm.billSubType = '盘点'
+          this.$refs.modalForm.prefixNo = 'PD'
+          //查询单条单据信息
+          const { findBillDetailByNumber } = require('@/api/api')
+          findBillDetailByNumber({ number: record.number }).then((res) => {
+            if (res && res.code === 200) {
+              let item = res.data
+              this.handleEdit(item)
+            }
+          })
+        } else {
+          this.$message.warning("抱歉，只有未审核的单据才能编辑，请先进行反审核！")
+        }
+      },
       searchQuery() {
         this.loadData(1)
-        if(this.inOutManageFlag) {
-          this.initWaitBillCount('入库', '采购,销售退货', '1,3')
-        }
+        // 盘点单不需要待入库统计
+        // if(this.inOutManageFlag) {
+        //   this.initWaitBillCount('盘点', '盘点', '1,3')
+        // }
       },
       searchReset() {
         this.queryParam = {
-          type: this.queryParam.type,
-          subType: this.queryParam.subType
+          type: "盘点",
+          subType: "盘点"
         }
         this.loadData(1)
-        if(this.inOutManageFlag) {
-          this.initWaitBillCount('入库', '采购,销售退货', '1,3')
-        }
+        // 盘点单不需要待入库统计
+        // if(this.inOutManageFlag) {
+        //   this.initWaitBillCount('盘点', '盘点', '1,3')
+        // }
       },
       myHandleDelete(record) {
         let that = this
@@ -308,9 +369,10 @@
           deleteAction(that.url.delete, {id: record.id}).then((res) => {
             if(res.code === 200){
               that.loadData(1)
-              if(that.inOutManageFlag) {
-                that.initWaitBillCount('入库', '采购,销售退货', '1,3')
-              }
+              // 盘点单不需要待入库统计
+              // if(that.inOutManageFlag) {
+              //   that.initWaitBillCount('盘点', '盘点', '1,3')
+              // }
             } else {
               that.$message.warning(res.data.message);
             }
@@ -337,9 +399,10 @@
                 if(res.code === 200){
                   that.loadData()
                   that.onClearSelected()
-                  if(that.inOutManageFlag) {
-                    that.initWaitBillCount('入库', '采购,销售退货', '1,3')
-                  }
+                  // 盘点单不需要待入库统计
+                  // if(that.inOutManageFlag) {
+                  //   that.initWaitBillCount('盘点', '盘点', '1,3')
+                  // }
                 } else {
                   that.$message.warning(res.data.message)
                 }
@@ -350,14 +413,15 @@
           })
         }
       },
-      //待入库
+      //待入库（盘点单不需要此功能）
       handleWaitBill() {
-        this.$refs.batchWaitBill.show('入库', '采购,销售退货', "1,3")
-        this.$refs.batchWaitBill.title = "批量选择采购入库或销售退货"
+        this.$message.info('盘点单不支持待入库功能')
+        // this.$refs.batchWaitBill.show('盘点', '盘点', "1,3")
+        // this.$refs.batchWaitBill.title = "批量选择盘点单据"
       },
       waitModalFormClose() {
         this.loadData()
-        this.initWaitBillCount('入库', '采购,销售退货', '1,3')
+        // this.initWaitBillCount('盘点', '盘点', '1,3')
       },
     }
   }

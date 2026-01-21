@@ -168,6 +168,9 @@
         operTimeStr: '',
         prefixNo: 'QTRK',
         fileList:[],
+        // 允许外部设置单据类型
+        billType: '',
+        billSubType: '',
         rowCanEdit: true,
         //出入库管理开关，适合独立仓管场景
         inOutManageFlag: false,
@@ -299,8 +302,9 @@
         let totalPrice = 0
         let billMain = Object.assign(this.model, allValues.formValue)
         let detailArr = allValues.tablesValue[0].values
-        billMain.type = '入库'
-        billMain.subType = '其它'
+        // 允许外部传入type和subType，否则使用默认值
+        billMain.type = this.billType || '入库'
+        billMain.subType = this.billSubType || '其它'
         for(let item of detailArr){
           totalPrice += item.allPrice-0
         }
