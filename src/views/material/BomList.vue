@@ -13,8 +13,8 @@
               <a-col :md="12" :sm="24">
                 <a-form-item label="有无BOM">
                   <a-select v-model="queryParam.hasBom" placeholder="请选择" allow-clear>
-                    <a-select-option value="1">有</a-select-option>
-                    <a-select-option value="0">无</a-select-option>
+                    <a-select-option :value="1">有</a-select-option>
+                    <a-select-option :value="0">无</a-select-option>
                   </a-select>
                 </a-form-item>
               </a-col>
@@ -273,7 +273,7 @@
         description: 'BOM管理页面',
         // 左侧商品列表
         columns: [
-          { title: 'BOM', dataIndex: 'hasBom', customRender: (text) => text === '1' ? '有' : '无', width: 60 },
+          { title: 'BOM', dataIndex: 'hasBom', customRender: (text) => text == 1 ? '有' : '无', width: 60 },
           { title: '条码', dataIndex: 'mBarCode', width: 120 },
           { title: '名称', dataIndex: 'name', width: 160, ellipsis: true },
           { title: '规格', dataIndex: 'standard', width: 100 },
@@ -398,7 +398,7 @@
     methods: {
       initColumnsSetting(){
         this.columns = [
-          { title: 'BOM', dataIndex: 'hasBom', customRender: (text) => text === '1' ? '有' : '无', width: 60 },
+          { title: 'BOM', dataIndex: 'hasBom', customRender: (text) => text == 1 ? '有' : '无', width: 60 },
           { title: '条码', dataIndex: 'mBarCode', width: 120 },
           { title: '名称', dataIndex: 'name', width: 160, ellipsis: true },
           { title: '规格', dataIndex: 'standard', width: 100 },
