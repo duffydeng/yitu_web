@@ -105,6 +105,7 @@
                 :loading="bomLoading"
                 :components="handleDrag(bomColumns)"
                 :row-selection="{selectedRowKeys: bomSelectedRowKeys, onChange: onBomSelectChange}"
+                @change="handleBomTableChange"
               >
                 <template slot="qtyRender" slot-scope="text, record">
                   <a-input-number
@@ -224,11 +225,12 @@
       <a-table
         :columns="bomDetailColumns"
         :dataSource="bomDetailDataSource"
-        :pagination="false"
+        :pagination="bomDetailPagination"
         :scroll="bomDetailScroll"
         size="middle"
         bordered
         rowKey="id"
+        @change="handleBomDetailTableChange"
       >
         <template slot="emptyText">
           <a-empty description="暂无数据" />
@@ -370,6 +372,17 @@
           { title: '备注', dataIndex: 'remark', width: 150 }
         ],
         bomDetailScroll: { x: 1200 },
+        bomDetailPagination: {
+          current: 1,
+          pageSize: 10,
+          pageSizeOptions: ['10', '20', '30', '50'],
+          showTotal: (total, range) => {
+            return range[0] + '-' + range[1] + ' 共' + total + '条'
+          },
+          showQuickJumper: true,
+          showSizeChanger: true,
+          total: 0
+        },
         // 拖拽相关
         leftWidth: 40, // 左侧面板宽度百分比，默认40%
         isDragging: false
@@ -466,11 +479,16 @@
       },
       loadBomData(materialId) {
         this.bomLoading = true
-        let params = { id: materialId }
+        let search = {
+          id: materialId,
+          pageNo: this.bomPagination.current,
+          pageSize: this.bomPagination.pageSize
+        }
         // 如果选择了版本号查询条件，添加version参数
         if (this.bomQueryVersion) {
-          params.version = this.bomQueryVersion
+          search.version = this.bomQueryVersion
         }
+        let params = { search: search }
         getAction(this.bomUrl.list, params).then(res => {
           if (res.code === 200) {
             let data = res.data.rows || res.data
@@ -669,12 +687,14 @@
       },
       // 点击名称打开详情弹窗
       handleMaterialNameClick(record) {
-        // 使用materialId查询详情，如果没有materialId则使用id
+        // 使用materialId查询详情,如果没有materialId则使用id
         const materialId = record.materialId || record.id
         if (!materialId) {
           this.$message.warning('商品ID不存在')
           return
         }
+        // 重置详情表格分页为第1页
+        this.bomDetailPagination.current = 1
         this.bomDetailModalVisible = true
         this.bomDetailData = record
         // 设置表单初始值
@@ -689,21 +709,30 @@
             remark: record.remark || ''
           })
         })
-        // 加载详情列表，使用 /bomList/list 接口
+        // 加载详情列表,使用 /bomList/list 接口
         this.loadBomDetailList(materialId)
       },
       // 加载BOM详情列表
       loadBomDetailList(materialId) {
-        getAction(this.bomUrl.list, { id: materialId }).then(res => {
+        let search = {
+          id: materialId,
+          pageNo: this.bomDetailPagination.current,
+          pageSize: this.bomDetailPagination.pageSize
+        }
+        let params = { search: search }
+        getAction(this.bomUrl.list, params).then(res => {
           if (res.code === 200) {
             let data = res.data.rows || res.data
             this.bomDetailDataSource = Array.isArray(data) ? data : []
+            this.bomDetailPagination.total = res.data.total || (Array.isArray(data) ? data.length : 0)
           } else {
             this.$message.warning(res.data || '获取详情失败')
             this.bomDetailDataSource = []
+            this.bomDetailPagination.total = 0
           }
         }).catch(() => {
           this.bomDetailDataSource = []
+          this.bomDetailPagination.total = 0
         })
       },
       // 详情弹窗数量变化
@@ -767,6 +796,19 @@
         this.bomDetailModalVisible = false
         this.bomDetailForm.resetFields()
         this.bomDetailDataSource = []
+      },
+      // 主BOM表格分页变化处理
+      handleBomTableChange(pagination, filters, sorter) {
+        this.bomPagination.current = pagination.current
+        this.bomPagination.pageSize = pagination.pageSize
+        this.loadBomData(this.selectedMaterial.id)
+      },
+      // 详情表格分页变化处理
+      handleBomDetailTableChange(pagination, filters, sorter) {
+        this.bomDetailPagination.current = pagination.current
+        this.bomDetailPagination.pageSize = pagination.pageSize
+        const materialId = this.bomDetailData.materialId || this.bomDetailData.id
+        this.loadBomDetailList(materialId)
       },
       searchReset() {
         this.queryParam = {
