@@ -72,6 +72,8 @@
         <div class="table-operator"  style="margin-top: 5px">
           <a-button @click="handleProductionAssign" type="primary" icon="plus">分配排产</a-button>
           <a-button @click="handleAssemble" type="primary" icon="check">完工</a-button>
+          <a-button @click="handleQualityCheck" type="primary" icon="safety">质检完成</a-button>
+          <a-button @click="handleDelivery" type="primary" icon="car">发货</a-button>
           <a-button v-if="isShowExcel && btnEnableList.indexOf(3)>-1" icon="download" @click="handleExport">导出</a-button>
           <a-popover trigger="click" placement="right">
             <template slot="content">
@@ -132,6 +134,8 @@
         <dealer-order-modal ref="modalForm" @ok="modalFormOk" @close="modalFormClose"></dealer-order-modal>
         <production-assign-modal ref="productionAssignModal" @ok="modalFormOk"></production-assign-modal>
         <assemble-modal ref="assembleModal" @ok="modalFormOk"></assemble-modal>
+        <quality-check-modal ref="qualityCheckModal" @ok="modalFormOk"></quality-check-modal>
+        <delivery-modal ref="deliveryModal" @ok="modalFormOk"></delivery-modal>
         <bill-detail ref="modalDetail" @ok="modalFormOk" @close="modalFormClose"></bill-detail>
         <bill-excel-iframe ref="billExcelIframe" @ok="modalFormOk" @close="modalFormClose"></bill-excel-iframe>
       </a-card>
@@ -146,6 +150,8 @@
   import { BillListMixin } from './mixins/BillListMixin'
   import ProductionAssignModal from './modules/ProductionAssignModal' // 分配排产弹窗
   import AssembleModal from './modules/AssembleModal' // 完工弹窗
+  import QualityCheckModal from './modules/QualityCheckModal' // 质检完成弹窗
+  import DeliveryModal from './modules/DeliveryModal' // 发货弹窗
   import JEllipsis from '@/components/jeecg/JEllipsis'
   export default {
     name: "DealerOrderList",
@@ -156,7 +162,9 @@
       BillExcelIframe,
       JEllipsis,
       ProductionAssignModal,
-      AssembleModal
+      AssembleModal,
+      QualityCheckModal,
+      DeliveryModal
     },
     data () {
       return {
@@ -280,6 +288,20 @@
           return;
         }
         this.$refs.assembleModal.show(this.selectedRowKeys);
+      },
+      handleQualityCheck() {
+        if (this.selectedRowKeys.length === 0) {
+          this.$message.warning("请至少选择一条记录！");
+          return;
+        }
+        this.$refs.qualityCheckModal.show(this.selectedRowKeys);
+      },
+      handleDelivery() {
+        if (this.selectedRowKeys.length === 0) {
+          this.$message.warning("请至少选择一条记录！");
+          return;
+        }
+        this.$refs.deliveryModal.show(this.selectedRowKeys);
       }
     }
   }
