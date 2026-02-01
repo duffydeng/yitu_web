@@ -89,7 +89,7 @@ export default {
         if (valid) {
           this.confirmLoading = true
           const params = {
-            orderIds: this.orderIds,
+            ids: this.orderIds.join(","),
             expressCompanyCode: this.model.expressCompanyCode,
             expressCompanyName: this.model.expressCompanyName,
             expressNumber: this.model.expressNumber
@@ -97,16 +97,18 @@ export default {
           
           postAction(this.url.delivery, params)
             .then(res => {
-              if (res.success) {
-                this.$message.success('发货成功')
-                this.handleCancel()
+              if (res.code === 200) {
+                const msg = res.data.msg || res.data.message || '发货成功'
+                this.$message.success(msg)
                 this.$emit('ok')
+                this.handleCancel()
               } else {
-                this.$message.error(res.message || '发货失败')
+                const errorMsg = res.data.msg || res.message || res.data.message || '发货失败'
+                this.$message.warning(errorMsg)
               }
             })
             .catch(err => {
-              this.$message.error('发货失败：' + err.message)
+              this.$message.error('操作失败，请稍后重试')
             })
             .finally(() => {
               this.confirmLoading = false
