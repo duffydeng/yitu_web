@@ -53,14 +53,16 @@
         <div v-if="selectedMaterial && selectedMaterial.id">
           <a-form layout="inline">
             <a-row :gutter="24">
-              <a-col :md="12" :sm="24">
+              <a-col :md="8" :sm="24">
                 <a-form-item label="商品条码">
                   <a-input v-model="selectedMaterial.mBarCode" :read-only="true" style="border: none; box-shadow: none;" />
                 </a-form-item>
               </a-col>
-              <a-col :md="12" :sm="24">
+              <a-col :md="16" :sm="24">
                 <a-form-item label="商品名称">
-                  <a-input v-model="selectedMaterial.name" :read-only="true" style="border: none; box-shadow: none;" />
+                  <a-tooltip :title="selectedMaterial.name" placement="topLeft" :autoAdjustOverflow="true">
+                    <a-input v-model="selectedMaterial.name" :read-only="true" style="border: none; box-shadow: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" />
+                  </a-tooltip>
                 </a-form-item>
               </a-col>
             </a-row>
@@ -117,7 +119,9 @@
                   />
                 </template>
                 <template slot="materialNameRender" slot-scope="text, record">
-                  <a @click="handleMaterialNameClick(record)" style="color: #1890ff; cursor: pointer;">{{ text }}</a>
+                  <a-tooltip :title="text" placement="topLeft" :autoAdjustOverflow="true">
+                    <a @click="handleMaterialNameClick(record)" style="color: #1890ff; cursor: pointer;">{{ text }}</a>
+                  </a-tooltip>
                 </template>
               </a-table>
             </a-tab-pane>
@@ -311,7 +315,7 @@
             }
           },
           { title: '条码', dataIndex: 'barCode', width: 120 },
-          { title: '名称', dataIndex: 'materialName', width: 200, ellipsis: true, scopedSlots: { customRender: 'materialNameRender' } },
+          { title: '名称', dataIndex: 'materialName', width: 300, ellipsis: true, scopedSlots: { customRender: 'materialNameRender' } },
           { title: '规格', dataIndex: 'standard', width: 120 },
           { title: '型号', dataIndex: 'model', width: 120 },
           { title: '单位', dataIndex: 'unit', width: 80 },
@@ -323,7 +327,7 @@
           { title: '备注', dataIndex: 'remark', width: 150 }
         ],
         bomSelectedRowKeys: [],
-        bomScroll: { x: 1200 },
+        bomScroll: { x: 1300 },
         bomPagination: {
           current: 1,
           pageSize: 10,
@@ -360,7 +364,7 @@
         bomDetailDataSource: [],
         bomDetailColumns: [
           { title: '条码', dataIndex: 'barCode', width: 120 },
-          { title: '名称', dataIndex: 'materialName', width: 200, ellipsis: true },
+          { title: '名称', dataIndex: 'materialName', width: 300, ellipsis: true },
           { title: '规格', dataIndex: 'standard', width: 120 },
           { title: '型号', dataIndex: 'model', width: 120 },
           { title: '单位', dataIndex: 'unit', width: 80 },
@@ -371,7 +375,7 @@
           { title: '版本号', dataIndex: 'version', width: 100 },
           { title: '备注', dataIndex: 'remark', width: 150 }
         ],
-        bomDetailScroll: { x: 1200 },
+        bomDetailScroll: { x: 1300 },
         bomDetailPagination: {
           current: 1,
           pageSize: 10,
@@ -424,7 +428,7 @@
           // 计算右侧面板的可用宽度
           const rightPanel = this.$el.querySelector('.bom-right-panel')
           const panelWidth = rightPanel ? rightPanel.offsetWidth : document.documentElement.clientWidth * (100 - this.leftWidth) / 100
-          this.bomScroll.x = 1200 // 固定横向滚动宽度
+          this.bomScroll.x = 1300 // 固定横向滚动宽度
           this.bomScroll.y = document.documentElement.clientHeight - operatorDomLen - basicLength - 100
         }
       },
