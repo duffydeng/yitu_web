@@ -112,9 +112,11 @@
             :loading="loading"
             :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
             :customRow="customRow"
+            :expandedRowKeys="expandedRowKeys"
+            @expand="onExpand"
             @change="handleTableChange">
             <span slot="action" slot-scope="text, record">
-              <a @click="myHandleDetail(record, '经销订单', prefixNo)">查看</a>
+              <a @click="handleEdit(record)">编辑</a>
             </span>
 			<template slot="customRenderStatus" slot-scope="status">
               <a-tag v-if="status == '0'" color="blue">已创建</a-tag>
@@ -127,11 +129,23 @@
               <a-tag v-if="status == '60'" color="green">已完成</a-tag>
               <a-tag v-if="status == '99'" color="grey">已取消</a-tag>
             </template>
+            <a-table
+              bordered
+              size="small"
+              slot="expandedRowRender"
+              slot-scope="record"
+              :loading="record.loading"
+              :columns="detailColumns"
+              :dataSource="record.childrens"
+              :row-key="record => record.id"
+              :pagination="false">
+            </a-table>
           </a-table>
         </div>
         <!-- table区域-end -->
         <!-- 表单区域 -->
         <dealer-order-modal ref="modalForm" @ok="modalFormOk" @close="modalFormClose"></dealer-order-modal>
+        <dealer-order-edit-modal ref="editModal" @ok="modalFormOk" @close="modalFormClose"></dealer-order-edit-modal>
         <production-assign-modal ref="productionAssignModal" @ok="modalFormOk"></production-assign-modal>
         <assemble-modal ref="assembleModal" @ok="modalFormOk"></assemble-modal>
         <quality-check-modal ref="qualityCheckModal" @ok="modalFormOk"></quality-check-modal>
@@ -144,10 +158,12 @@
 </template>
 <script>
   import DealerOrderModal from './modules/DealerOrderModal' // 您需要创建此文件
+  import DealerOrderEditModal from './modules/DealerOrderEditModal' // 订单编辑弹窗
   import BillDetail from './dialog/BillDetail'
   import BillExcelIframe from '@/components/tools/BillExcelIframe'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import { BillListMixin } from './mixins/BillListMixin'
+  import { getAction } from '@/api/manage'
   import ProductionAssignModal from './modules/ProductionAssignModal' // 分配排产弹窗
   import AssembleModal from './modules/AssembleModal' // 完工弹窗
   import QualityCheckModal from './modules/QualityCheckModal' // 质检完成弹窗
@@ -158,6 +174,7 @@
     mixins:[JeecgListMixin,BillListMixin],
     components: {
       DealerOrderModal,
+      DealerOrderEditModal,
       BillDetail,
       BillExcelIframe,
       JEllipsis,
@@ -184,6 +201,20 @@
         wrapperCol: {
           span: 18
         },
+        // 存储展开的行key
+        expandedRowKeys: [],
+        // 明细表头
+        detailColumns: [
+          { title: '物料名称', dataIndex: 'materialName'},
+          { title: '条码', dataIndex: 'barCode'},
+          { title: '版本', dataIndex: 'version'},
+          { title: '分类名称', dataIndex: 'categoryName'},
+          { title: '数量', dataIndex: 'qty'},
+          { title: '单价', dataIndex: 'detailPrice'},
+          { title: '总价', dataIndex: 'detailTotalPrice'},
+          { title: '创建时间', dataIndex: 'createTime'},
+          { title: '更新时间', dataIndex: 'updateTime'}
+        ],
 				// 默认索引
         defDataIndex:["action","orderNumber","orderStatus","organizationName","customerName","customerPhone","productName","totalPrice","deposit","deductStock","createTime","updateTime","planFinishTime","actualFinishTime","productionPerson","afterSaleContact","expressCompanyName","expressNumber","receivePerson","receivePhone","receiveAddressDetail","qualityInspector","qualityInspectionTime","deliveryTime","collectionTime","signOffTime"],
         // 默认列
@@ -302,6 +333,36 @@
           return;
         }
         this.$refs.deliveryModal.show(this.selectedRowKeys);
+      },
+      handleEdit(record) {
+        this.$refs.editModal.show(record)
+      },
+      // 展开/折叠行
+      onExpand(expanded, record) {
+        if (expanded) {
+          this.expandedRowKeys = [...new Set([...this.expandedRowKeys, record.id])]
+          this.loadOrderDetail(record)
+        } else {
+          this.expandedRowKeys = this.expandedRowKeys.filter(key => key !== record.id)
+        }
+      },
+      // 加载订单明细
+      loadOrderDetail(record) {
+        record.loading = true
+        const { getAction } = require('@/api/manage')
+        getAction('/order/getOrderDetailList', { orderId: record.id }).then(res => {
+          if (res && res.code === 200) {
+            record.childrens = res.data || []
+          } else {
+            this.$message.warning(res.message || '加载明细失败')
+            record.childrens = []
+          }
+        }).catch(err => {
+          this.$message.error('加载明细失败：' + err.message)
+          record.childrens = []
+        }).finally(() => {
+          record.loading = false
+        })
       }
     }
   }
