@@ -94,6 +94,27 @@
                 <a-button @click="handleJEditableTableDelete" icon="delete">删除</a-button>
                 <a-button @click="handleSave" type="primary" icon="save">保存</a-button>
                 <a-button @click="handleImport" icon="import">BOM导入</a-button>
+                <a-popover trigger="click" placement="right">
+                  <template slot="content">
+                    <a-checkbox-group @change="onBomColChange" v-model="bomSettingDataIndex">
+                      <a-row style="width: 400px">
+                        <template v-for="(item,index) in bomDefColumns">
+                          <a-col :span="12" :key="index">
+                            <a-checkbox :value="item.dataIndex">
+                              {{ item.title }}
+                            </a-checkbox>
+                          </a-col>
+                        </template>
+                      </a-row>
+                      <a-row style="padding-top: 10px;">
+                        <a-col>
+                          恢复默认列配置：<a-button @click="handleRestBomDefault" type="link" size="small">恢复默认</a-button>
+                        </a-col>
+                      </a-row>
+                    </a-checkbox-group>
+                  </template>
+                  <a-button icon="setting">列设置</a-button>
+                </a-popover>
               </div>
               <a-table
                 ref="bomTable"
@@ -303,10 +324,13 @@
         selectedMaterial: {},
         bomLoading: false,
         bomDataSource: [],
-        bomColumns: [
+        // 默认显示的BOM列索引（规格、型号、单位默认不显示）
+        bomSettingDataIndex: ['rowIndex', 'barCode', 'materialName', 'wholesaleDecimal', 'purchaseDecimal', 'qty', 'totalPrice', 'version', 'remark'],
+        // 所有可选的BOM列
+        bomDefColumns: [
           {
             title: '#',
-            dataIndex: '',
+            dataIndex: 'rowIndex',
             key: 'rowIndex',
             width: 60,
             align: 'center',
@@ -326,6 +350,7 @@
           { title: '版本号', dataIndex: 'version', width: 100 },
           { title: '备注', dataIndex: 'remark', width: 150 }
         ],
+        bomColumns: [],
         bomSelectedRowKeys: [],
         bomScroll: { x: 1300 },
         bomPagination: {
@@ -394,6 +419,7 @@
     },
     created() {
       this.initColumnsSetting()
+      this.initBomColumnsSetting()
       this.bomDetailForm = this.$form.createForm(this)
     },
     mounted() {
@@ -410,6 +436,42 @@
           { title: '类别', dataIndex: 'categoryName', width: 100 },
           { title: '单位', dataIndex: 'unit', width: 60 }
         ]
+      },
+      // 初始化BOM列表的列设置
+      initBomColumnsSetting() {
+        // 从localStorage读取用户保存的列配置
+        const savedSetting = localStorage.getItem('bomColumnsSetting')
+        if (savedSetting) {
+          try {
+            this.bomSettingDataIndex = JSON.parse(savedSetting)
+          } catch (e) {
+            // 解析失败使用默认配置
+            this.bomSettingDataIndex = ['rowIndex', 'barCode', 'materialName', 'wholesaleDecimal', 'purchaseDecimal', 'qty', 'totalPrice', 'version', 'remark']
+          }
+        }
+        // 根据选中的列生成实际显示的列配置
+        this.updateBomColumns()
+      },
+      // 更新BOM列配置
+      updateBomColumns() {
+        this.bomColumns = this.bomDefColumns.filter(col => {
+          const dataIndex = col.dataIndex || col.key
+          return this.bomSettingDataIndex.includes(dataIndex)
+        })
+      },
+      // BOM列设置变化
+      onBomColChange(checkedValues) {
+        this.bomSettingDataIndex = checkedValues
+        this.updateBomColumns()
+        // 保存到localStorage
+        localStorage.setItem('bomColumnsSetting', JSON.stringify(checkedValues))
+      },
+      // 恢复BOM列默认配置
+      handleRestBomDefault() {
+        this.bomSettingDataIndex = ['rowIndex', 'barCode', 'materialName', 'wholesaleDecimal', 'purchaseDecimal', 'qty', 'totalPrice', 'version', 'remark']
+        this.updateBomColumns()
+        localStorage.setItem('bomColumnsSetting', JSON.stringify(this.bomSettingDataIndex))
+        this.$message.success('已恢复默认列配置')
       },
       // 初始化右侧BOM列表的滚动配置
       initBomScroll() {
