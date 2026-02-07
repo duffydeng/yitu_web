@@ -181,6 +181,8 @@ export default {
           this.allTreeKeys = [];
           for (let i = 0; i < res.length; i++) {
             let temp = res[i]
+            // 格式化树节点标题，在名称前显示编号
+            that.formatTreeNodeTitle(temp)
             that.categoryTree.push(temp)
             that.setThisExpandedKeys(temp)
             that.getAllKeys(temp);
@@ -188,6 +190,24 @@ export default {
           this.loading = false
         }
       })
+    },
+    // 格式化树节点标题，在名称前显示编号
+    formatTreeNodeTitle(node) {
+      if (node) {
+        // 如果有 serialNo，将其添加到 title 前面
+        if (node.serialNo && node.title) {
+          node.title = `${node.serialNo} ${node.title}`
+        } else if (node.serialNo && node.name) {
+          // 如果没有 title 但有 name，使用 name
+          node.title = `${node.serialNo} ${node.name}`
+        }
+        // 递归处理子节点
+        if (node.children && node.children.length > 0) {
+          for (let j = 0; j < node.children.length; j++) {
+            this.formatTreeNodeTitle(node.children[j])
+          }
+        }
+      }
     },
     setThisExpandedKeys(node) {
       if (node.children && node.children.length > 0) {
@@ -306,7 +326,10 @@ export default {
         if (res) {
           this.treeData = []
           for (let i = 0; i < res.length; i++) {
-            this.treeData.push(res[i])
+            let temp = res[i]
+            // 格式化树节点标题，在名称前显示编号
+            this.formatTreeNodeTitle(temp)
+            this.treeData.push(temp)
           }
         }
       })

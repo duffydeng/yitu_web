@@ -17,7 +17,9 @@
     <a-spin :spinning="confirmLoading">
       <a-form :form="form">
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="模板">
-          <span><a :href="tmpUrl" target="_blank"><b>明细Excel模板[下载]</b></a></span>
+          <a-button type="link" icon="download" @click="handleDownloadTemplate">
+            <b>明细Excel模板[下载]</b>
+          </a-button>
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="文件">
           <a-upload name="file" :showUploadList="false" :multiple="false" :headers="tokenHeader"
@@ -79,6 +81,8 @@
           this.tmpUrl = '/doc/buy_sale_item_template.xls'
         } else if(prefixNo === 'QTRK' || prefixNo === 'QTCK') {
           this.tmpUrl = '/doc/in_out_item_template.xls'
+        } else if(prefixNo === 'PD') {
+          this.tmpUrl = '/doc/stock_taking_template.xls'
         }
         this.form.resetFields()
         this.model = Object.assign({}, {})
@@ -90,6 +94,48 @@
       },
       handleCancel () {
         this.close()
+      },
+      //下载模板
+      handleDownloadTemplate() {
+        if (!this.tmpUrl) {
+          this.$message.warning('模板文件路径未配置')
+          return
+        }
+        // 从路径中提取文件名
+        const fileName = this.tmpUrl.split('/').pop()
+        // 根据文件扩展名确定 MIME 类型
+        const mimeType = fileName.endsWith('.xlsx') 
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'application/vnd.ms-excel'
+        
+        // 使用 fetch 获取文件并下载
+        fetch(this.tmpUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('文件不存在或无法访问')
+            }
+            return response.arrayBuffer()
+          })
+          .then(buffer => {
+            // 创建 Blob，指定正确的 MIME 类型
+            const blob = new Blob([buffer], { type: mimeType })
+            // 创建 Blob URL
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = url
+            link.setAttribute('download', fileName)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            // 释放 URL 对象
+            window.URL.revokeObjectURL(url)
+            this.$message.success('模板下载成功')
+          })
+          .catch(error => {
+            console.error('下载失败:', error)
+            this.$message.error('模板下载失败，请检查文件是否存在')
+          })
       },
       //导入
       handleImportExcel(info){
