@@ -18,6 +18,12 @@ export const asyncRouterMap = [
         name: 'BomList',
         component: () => import('@/views/material/BomList'),
         meta: { title: 'BOM管理', keepAlive: true }
+      },
+      {
+        path: '/system/dealer',
+        name: 'DealerList',
+        component: () => import('@/views/system/DealerList'),
+        meta: { title: '经销商管理', keepAlive: true }
       }
     ]
   },
@@ -62,6 +68,7 @@ export const constantRouterMap = [
       }
     ]
   },
+
   {
     path: '/404',
     component: () => import(/* webpackChunkName: "fail" */ '@/views/exception/404')
