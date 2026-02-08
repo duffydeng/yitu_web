@@ -172,7 +172,7 @@
               slot-scope="record"
               :loading="record.loading"
               :columns="detailColumns"
-              :dataSource="record.childrens"
+              :data-source="record.childrens"
               :row-key="record => record.id"
               :pagination="false">
             </a-table>

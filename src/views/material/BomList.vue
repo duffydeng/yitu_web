@@ -61,7 +61,7 @@
               <a-col :md="16" :sm="24">
                 <a-form-item label="商品名称">
                   <a-tooltip :title="selectedMaterial.name" placement="topLeft" :autoAdjustOverflow="true">
-                    <a-input v-model="selectedMaterial.name" :read-only="true" style="border: none; box-shadow: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" />
+                    <a-input v-model="selectedMaterial.name" :read-only="true" style="border: none; box-shadow: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; width:100%;" />
                   </a-tooltip>
                 </a-form-item>
               </a-col>
@@ -283,8 +283,6 @@
   import JEllipsis from '@/components/jeecg/JEllipsis'
   import ImportFileModal from '@/components/tools/ImportFileModal'
   import { getAction, postAction, downFile, deleteAction } from '@/api/manage'
-   import JEllipsis from '@/components/jeecg/JEllipsis'
-  import { getAction, postAction } from '@/api/manage'
 
   export default {
     name: "BomList",

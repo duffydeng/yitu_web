@@ -1166,6 +1166,55 @@
           </a-row>
         </section>
       </template>
+       <!--盘点复盘-->
+      <template v-else-if="billType === '库存盘点'">
+        <section ref="print" id="stocktakingPrint">
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="6">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="单据日期">
+                {{model.operTimeStr}}
+              </a-form-item>
+            </a-col>
+            <a-col :span="6">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="单据编号">
+                {{model.number}}
+              </a-form-item>
+            </a-col>
+            <a-col :span="6">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="关联单据">
+                {{model.linkNumber}}
+              </a-form-item>
+            </a-col>
+            <a-col :span="6"></a-col>
+          </a-row>
+          <div :style="tableWidth">
+            <a-table
+              ref="table"
+              size="middle"
+              bordered
+              rowKey="id"
+              :pagination="false"
+              :loading="loading"
+              :columns="columns"
+              :dataSource="dataSource">
+              <template slot="customBarCode" slot-scope="text, record">
+                <div :style="record.imgName?'float:left;line-height:30px':'float:left;'">{{record.barCode}}</div>
+                <a-popover placement="right" trigger="click">
+                  <template slot="content"><img :src="getImgUrl(record.imgName, record.imgLarge)" width="500px" /></template>
+                  <div class="item-info" v-if="record.imgName"><img v-if="record.imgName" :src="getImgUrl(record.imgName, record.imgSmall)" class="item-img" title="查看大图" /></div>
+                </a-popover>
+              </template>
+            </a-table>
+          </div>
+          <a-row class="form-row" :gutter="24">
+            <a-col :lg="24" :md="24" :sm="24">
+              <a-form-item :labelCol="labelCol" :wrapperCol="{xs: { span: 24 },sm: { span: 24 }}" label="" style="padding:20px 10px;">
+                {{model.remark}}
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </section>
+      </template>
       <template v-if="fileList && fileList.length>0">
         <a-row class="form-row" :gutter="24">
           <a-col :span="10">
@@ -1608,6 +1657,27 @@
           { title: '单价', dataIndex: 'unitPrice'},
           { title: '金额', dataIndex: 'allPrice'},
           { title: '备注', dataIndex: 'remark'}
+        ],
+        stocktakingColumns:[
+          { title: '仓库名称', dataIndex: 'depotName'},
+          { title: '条码', dataIndex: 'barCode'},
+          { title: '名称', dataIndex: 'name'},
+          { title: '规格', dataIndex: 'standard'},
+          { title: '品牌', dataIndex: 'brand'},
+          { title: '制造商', dataIndex: 'mfrs'},
+          { title: '扩展1', dataIndex: 'otherField1'},
+          { title: '扩展2', dataIndex: 'otherField2'},
+          { title: '扩展3', dataIndex: 'otherField3'},
+          { title: '库存', dataIndex: 'stock'},
+          { title: '单位', dataIndex: 'unit'},
+          { title: '多属性', dataIndex: 'sku'},
+          {title: '金额',dataIndex:'allPrice'},
+          {title: '数量',dataIndex:'operNumber'},
+          {title: '价税合计',dataIndex:'taxLastMoney'},
+          {title: '税额',dataIndex:'taxMoney'},
+          {title: '重量',dataIndex:'weight'},
+          { title: '备注', dataIndex: 'remark'}
+
         ]
       }
     },
@@ -1653,6 +1723,8 @@
           this.defColumns = this.disassembleColumns
         } else if (type === '盘点复盘') {
           this.defColumns = this.stockCheckReplayColumns
+        }else if(type === '库存盘点'){
+          this.defColumns = this.stocktakingColumns
         }
         //动态替换扩展字段
         this.handleChangeOtherField()
