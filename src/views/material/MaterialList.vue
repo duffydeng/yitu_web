@@ -287,21 +287,22 @@
             title: '操作',
             dataIndex: 'action',
             align:"center",
+            width: 120,
             scopedSlots: { customRender: 'action' },
           },
-          {title: '图片', dataIndex: 'pic', scopedSlots: { customRender: 'customPic' }},
-          {title: '条码', dataIndex: 'mBarCode'},
-          {title: '名称', dataIndex: 'name', scopedSlots: { customRender: 'customName' }},
-          {title: '规格', dataIndex: 'standard'},
-          {title: '型号', dataIndex: 'model'},
-          {title: '颜色', dataIndex: 'color', ellipsis:true},
-          {title: '品牌', dataIndex: 'brand', ellipsis:true},
-          {title: '助记码', dataIndex: 'mnemonic', ellipsis:true},
-          {title: '类别', dataIndex: 'categoryName', ellipsis:true},
-          {title: '扩展1', dataIndex: 'otherField1', ellipsis:true},
-          {title: '扩展2', dataIndex: 'otherField2', ellipsis:true},
-          {title: '扩展3', dataIndex: 'otherField3', ellipsis:true},
-          {title: '单位', dataIndex: 'unit', ellipsis:true,
+          {title: '图片', dataIndex: 'pic', width: 80, scopedSlots: { customRender: 'customPic' }},
+          {title: '条码', dataIndex: 'mBarCode', width: 140},
+          {title: '名称', dataIndex: 'name', width: 180, scopedSlots: { customRender: 'customName' }},
+          {title: '规格', dataIndex: 'standard', width: 120},
+          {title: '型号', dataIndex: 'model', width: 120},
+          {title: '颜色', dataIndex: 'color', width: 100, ellipsis:true},
+          {title: '品牌', dataIndex: 'brand', width: 120, ellipsis:true},
+          {title: '助记码', dataIndex: 'mnemonic', width: 100, ellipsis:true},
+          {title: '类别', dataIndex: 'categoryName', width: 120, ellipsis:true},
+          {title: '扩展1', dataIndex: 'otherField1', width: 120, ellipsis:true},
+          {title: '扩展2', dataIndex: 'otherField2', width: 120, ellipsis:true},
+          {title: '扩展3', dataIndex: 'otherField3', width: 120, ellipsis:true},
+          {title: '单位', dataIndex: 'unit', width: 100, ellipsis:true,
             customRender:function (t,r,index) {
               if (r) {
                 let name = t?t:r.unitName
@@ -313,22 +314,22 @@
               }
             }
           },
-          {title: '基础重量', dataIndex: 'weight'},
-          {title: '保质期', dataIndex: 'expiryNum'},
-          {title: '制造商', dataIndex: 'mfrs', ellipsis:true},
-          {title: '初始库存', dataIndex: 'initialStock',
+          {title: '基础重量', dataIndex: 'weight', width: 100},
+          {title: '保质期', dataIndex: 'expiryNum', width: 100},
+          {title: '制造商', dataIndex: 'mfrs', width: 120, ellipsis:true},
+          {title: '初始库存', dataIndex: 'initialStock', width: 100,
             scopedSlots: { customRender: 'customRenderInitialStock' }
           },
-          {title: '库存', dataIndex: 'stock',
+          {title: '库存', dataIndex: 'stock', width: 100,
             scopedSlots: { customRender: 'customRenderStock' }
           },
-          {title: '采购价', dataIndex: 'purchaseDecimal'},
-          {title: '零售价', dataIndex: 'commodityDecimal'},
-          {title: '销售价', dataIndex: 'wholesaleDecimal'},
-          {title: '最低售价', dataIndex: 'lowDecimal'},
-          {title: '仓位货架', dataIndex: 'position'},
-          {title: '备注', dataIndex: 'remark'},
-          {title: '状态', dataIndex: 'enabled', align: "center",
+          {title: '采购价', dataIndex: 'purchaseDecimal', width: 100},
+          {title: '零售价', dataIndex: 'commodityDecimal', width: 100},
+          {title: '销售价', dataIndex: 'wholesaleDecimal', width: 100},
+          {title: '最低售价', dataIndex: 'lowDecimal', width: 100},
+          {title: '仓位货架', dataIndex: 'position', width: 120},
+          {title: '备注', dataIndex: 'remark', width: 150},
+          {title: '状态', dataIndex: 'enabled', width: 80, align: "center",
             scopedSlots: { customRender: 'customRenderEnabled' }
           }
         ],
@@ -634,5 +635,24 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+</style>
+<style>
+  /* 列宽调节样式 - 使用全局样式以便应用到表格 */
+  .resize-table-th {
+    position: relative;
+  }
+  
+  .table-draggable-handle {
+    position: absolute;
+    height: 100% !important;
+    bottom: 0;
+    right: -5px;
+    cursor: col-resize;
+    touch-action: none;
+  }
+  
+  .table-draggable-handle:hover {
+    border-right: 2px solid #1890ff;
   }
 </style>

@@ -90,6 +90,7 @@
               </div>
               <div class="table-operator">
                 <a-button @click="handleAdd" type="primary" icon="plus">新增</a-button>
+                <a-button @click="handleCopy" icon="copy">复制</a-button>
                 <a-button @click="handleBomExportXls('BOM清单')" icon="download">导出</a-button>
                 <a-button @click="handleJEditableTableDelete" icon="delete">删除</a-button>
                 <a-button @click="handleSave" type="primary" icon="save">保存</a-button>
@@ -137,6 +138,16 @@
                     :precision="0"
                     style="width: 100%"
                     @change="(value) => handleQtyChange(value, record)"
+                  />
+                </template>
+                <template slot="barCodeRender" slot-scope="text, record">
+                  <a-input
+                    v-model="record.barCode"
+                    :disabled="!record.isNew"
+                    style="width: 100%"
+                    placeholder="请输入条码"
+                    @blur="(e) => handleBarCodeBlur(e.target.value, record)"
+                    @pressEnter="(e) => handleBarCodeBlur(e.target.value, record)"
                   />
                 </template>
                 <template slot="materialNameRender" slot-scope="text, record">
@@ -338,7 +349,7 @@
               return parseInt(index) + 1
             }
           },
-          { title: '条码', dataIndex: 'barCode', width: 120 },
+          { title: '条码', dataIndex: 'barCode', width: 120, scopedSlots: { customRender: 'barCodeRender' } },
           { title: '名称', dataIndex: 'materialName', width: 300, ellipsis: true, scopedSlots: { customRender: 'materialNameRender' } },
           { title: '规格', dataIndex: 'standard', width: 120 },
           { title: '型号', dataIndex: 'model', width: 120 },
@@ -581,6 +592,92 @@
           return
         }
         this.$refs.selectMaterialModal.showModal()
+      },
+      handleCopy() {
+        if (!this.selectedMaterial.id) {
+          this.$message.warning('请先在左侧选择一个商品！')
+          return
+        }
+        if (this.bomSelectedRowKeys.length === 0) {
+          this.$message.warning('请选择要复制的物料')
+          return
+        }
+        // 获取选中的行
+        const selectedRows = this.bomDataSource.filter(item => 
+          this.bomSelectedRowKeys.includes(item.id)
+        )
+        // 复制选中的行，不包含id，生成新的临时id
+        const copiedRows = selectedRows.map(row => {
+          const newRow = {
+            ...row,
+            id: 'new_' + new Date().getTime() + '_' + Math.floor(Math.random() * 10000),
+            isNew: true, // 标记为新行，用于条码可编辑判断
+            barCode: row.barCode || '', // 保留条码用于编辑
+            materialId: undefined // 清空materialId，等待条码编辑后重新赋值
+          }
+          return newRow
+        })
+        // 添加到数据源
+        this.bomDataSource.push(...copiedRows)
+        this.$message.success(`已复制 ${copiedRows.length} 条数据，请编辑条码后查询商品信息`)
+        // 清空选中状态
+        this.bomSelectedRowKeys = []
+      },
+      // 条码输入框失焦或回车时查询商品信息
+      handleBarCodeBlur(barCode, record) {
+        if (!barCode || !barCode.trim()) {
+          this.$message.warning('请输入条码')
+          return
+        }
+        if (!record.isNew) {
+          return // 非新复制的行不处理
+        }
+        
+        if (!this.selectedMaterial || !this.selectedMaterial.id) {
+          this.$message.warning('请先选择商品')
+          return
+        }
+        
+        const trimmedBarCode = barCode.trim()
+        // 如果条码没有变化，不重复查询
+        if (record.lastQueriedBarCode === trimmedBarCode && record.materialId) {
+          return
+        }
+        
+        // 调用商品查询接口，传入bomId（即选中的商品ID）和条码
+        this.bomLoading = true
+        getAction('/material/queryByBarCode', { 
+          bomId: this.selectedMaterial.id,
+          barCode: trimmedBarCode 
+        }).then(res => {
+          if (res.code === 200 && res.data) {
+            // 使用返回的结果完整替换当前行内容
+            const index = this.bomDataSource.findIndex(item => item.id === record.id)
+            if (index !== -1) {
+              const oldId = record.id // 保留原来的临时ID
+              const oldQty = record.qty // 保留原来的数量
+              const oldRemark = record.remark // 保留原来的备注
+              
+              // 完整替换当前行，使用接口返回的数据
+              this.$set(this.bomDataSource, index, {
+                ...res.data, // 使用返回的所有字段
+                id: oldId, // 保留临时ID
+                qty: oldQty || res.data.qty || 1, // 优先使用原数量
+                remark: oldRemark || res.data.remark || '', // 优先使用原备注
+                lastQueriedBarCode: trimmedBarCode, // 记录已查询的条码
+                isNew: false // 查询成功后取消新行标记，条码变为不可编辑
+              })
+              this.$message.success('已查询到商品信息')
+            }
+          } else {
+            this.$message.warning(res.data || '未查询到该条码的商品信息，请检查条码是否正确')
+          }
+        }).catch(err => {
+          console.error('查询商品信息失败:', err)
+          this.$message.error('查询商品信息失败，请重试')
+        }).finally(() => {
+          this.bomLoading = false
+        })
       },
       selectMaterialOK(rows, ids) {
         // 由于弹窗已设置为多选模式(:multi="true")，先弹出版本选择框
