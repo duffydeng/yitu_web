@@ -74,6 +74,7 @@
           <a-button @click="handleAssemble" type="primary" icon="check">完工</a-button>
           <a-button @click="handleQualityCheck" type="primary" icon="safety">质检完成</a-button>
           <a-button @click="handleDelivery" type="primary" icon="car">发货</a-button>
+          <a-button @click="handleDeductStock" type="primary" icon="minus-circle">扣减库存</a-button>
           <a-button v-if="isShowExcel && btnEnableList.indexOf(3)>-1" icon="download" @click="handleExport">导出</a-button>
           <a-popover trigger="click" placement="right">
             <template slot="content">
@@ -152,6 +153,30 @@
         <delivery-modal ref="deliveryModal" @ok="modalFormOk"></delivery-modal>
         <bill-detail ref="modalDetail" @ok="modalFormOk" @close="modalFormClose"></bill-detail>
         <bill-excel-iframe ref="billExcelIframe" @ok="modalFormOk" @close="modalFormClose"></bill-excel-iframe>
+        <!-- 扣减库存仓库选择弹窗 -->
+        <a-modal
+          title="扣减库存"
+          :visible="deductStockModalVisible"
+          :confirmLoading="deductStockLoading"
+          @ok="handleDeductStockConfirm"
+          @cancel="handleDeductStockCancel"
+          okText="确认扣减"
+          cancelText="取消">
+          <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+            <a-form-item label="仓库">
+              <a-select 
+                v-model="selectedDepotId" 
+                placeholder="请选择仓库" 
+                allow-clear
+                showSearch
+                optionFilterProp="children">
+                <a-select-option v-for="depot in depotList" :key="depot.id" :value="depot.id">
+                  {{ depot.depotName }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-form>
+        </a-modal>
       </a-card>
     </a-col>
   </a-row>
@@ -163,7 +188,7 @@
   import BillExcelIframe from '@/components/tools/BillExcelIframe'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import { BillListMixin } from './mixins/BillListMixin'
-  import { getAction } from '@/api/manage'
+  import { getAction, postAction } from '@/api/manage'
   import ProductionAssignModal from './modules/ProductionAssignModal' // 分配排产弹窗
   import AssembleModal from './modules/AssembleModal' // 完工弹窗
   import QualityCheckModal from './modules/QualityCheckModal' // 质检完成弹窗
@@ -203,6 +228,12 @@
         },
         // 存储展开的行key
         expandedRowKeys: [],
+        // 扣减库存相关
+        deductStockModalVisible: false,
+        deductStockLoading: false,
+        selectedDepotId: undefined,
+        // 仓库列表
+        depotList: [],
         // 明细表头
         detailColumns: [
           { title: '物料名称', dataIndex: 'materialName'},
@@ -291,10 +322,40 @@
           deleteBatch: "/order/deleteBatch",
           exportXlsUrl: "order/exportXls",
           importExcelUrl: "order/importExcel",
+          deductStock: "/order/deductStock"
         }
       }
     },
     created() {
+      this.getDepotData();
+    },
+    // 重写 loadData 方法，修复分页 total 类型问题
+    loadData(arg) {
+      if(!this.url.list){
+        this.$message.error("请设置url.list属性!")
+        return
+      }
+      //加载数据 若传入参数1则加载第一页的内容
+      if (arg === 1) {
+        this.ipagination.current = 1;
+      }
+      var params = this.getQueryParams();//查询条件
+      this.loading = true;
+      getAction(this.url.list, params).then((res) => {
+        if (res.success) {
+          // 确保分页 total 为数字类型
+          this.dataSource = res.result.records || res.result;
+          if (res.result.total) {
+            this.ipagination.total = parseInt(res.result.total);
+          } else {
+            this.ipagination.total = res.result.length || 0;
+          }
+        }else{
+          this.$message.warning(res.message)
+        }
+      }).finally(() => {
+        this.loading = false
+      })
     },
     methods: {
 			customRow(record) {
@@ -336,6 +397,58 @@
       },
       handleEdit(record) {
         this.$refs.editModal.show(record)
+      },
+      // 扣减库存
+      handleDeductStock() {
+        if (this.selectedRowKeys.length === 0) {
+          this.$message.warning("请至少选择一条记录！");
+          return;
+        }
+        this.deductStockModalVisible = true;
+        this.selectedDepotId = undefined;
+      },
+      // 确认扣减库存
+      handleDeductStockConfirm() {
+        if (!this.selectedDepotId) {
+          this.$message.warning("请选择仓库！");
+          return;
+        }
+        
+        this.deductStockLoading = true;
+        const params = {
+          ids: this.selectedRowKeys.join(','),
+          depotId: this.selectedDepotId
+        };
+        
+        postAction(this.url.deductStock, params).then(res => {
+          if (res.code === 200) {
+            this.$message.success(res.data.message || '扣减库存成功');
+            this.deductStockModalVisible = false;
+            this.loadData(); // 刷新列表
+            this.onClearSelected(); // 清空选择
+          } else {
+            this.$message.error(res.data.message || '扣减库存失败');
+          }
+        }).catch(err => {
+          this.$message.error('扣减库存失败：' + err.message);
+        }).finally(() => {
+          this.deductStockLoading = false;
+        });
+      },
+      // 取消扣减库存
+      handleDeductStockCancel() {
+        this.deductStockModalVisible = false;
+        this.selectedDepotId = undefined;
+      },
+      // 获取仓库数据
+      getDepotData() {
+        getAction('/depot/findDepotByCurrentUser').then((res) => {
+          if(res.code === 200){
+            this.depotList = res.data;
+          } else {
+            this.$message.info(res.data);
+          }
+        })
       },
       // 展开/折叠行
       onExpand(expanded, record) {
