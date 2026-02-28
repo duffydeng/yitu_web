@@ -53,16 +53,17 @@
         <div v-if="selectedMaterial && selectedMaterial.id">
           <a-form layout="inline">
             <a-row :gutter="24">
-              <a-col :md="8" :sm="24">
+              <a-col :md="6" :sm="24">
                 <a-form-item label="商品条码">
                   <a-input v-model="selectedMaterial.mBarCode" :read-only="true" style="border: none; box-shadow: none;" />
                 </a-form-item>
               </a-col>
-              <a-col :md="16" :sm="24">
-                <a-form-item label="商品名称">
-                  <a-tooltip :title="selectedMaterial.name" placement="topLeft" :autoAdjustOverflow="true">
-                    <a-input v-model="selectedMaterial.name" :read-only="true" style="border: none; box-shadow: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; width:100%;" />
-                  </a-tooltip>
+              <a-col :md="18" :sm="24">
+                <a-form-item label="商品名称" style="min-width: 300px;">
+                  <a-input 
+                    v-model="selectedMaterial.name" 
+                    :read-only="true" 
+                    style="border: none; box-shadow: none; width:100%; min-width: 300px;" />
                 </a-form-item>
               </a-col>
             </a-row>

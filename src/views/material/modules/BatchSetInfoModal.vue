@@ -33,6 +33,8 @@
                 <a-input-number style="width: 100%" placeholder="请输入保质期(天)" v-decorator.trim="[ 'expiryNum' ]" />
               </a-form-item>
             </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
             <a-col :md="8" :sm="24">
               <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="类别">
                 <a-tree-select style="width:100%" :dropdownStyle="{maxHeight:'200px',overflow:'auto'}" allow-clear
@@ -54,6 +56,18 @@
                   <a-select-option value="1">有</a-select-option>
                   <a-select-option value="0">无</a-select-option>
                 </a-select>
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
+            <a-col :md="8" :sm="24">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="仓位货架">
+                <a-input placeholder="请输入仓位货架" v-decorator.trim="[ 'position' ]" />
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="制造商">
+                <a-input placeholder="请输入制造商" v-decorator.trim="[ 'mfrs' ]" />
               </a-form-item>
             </a-col>
             <a-col :md="8" :sm="24">
