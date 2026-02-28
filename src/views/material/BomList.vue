@@ -651,20 +651,21 @@
           bomId: this.selectedMaterial.id,
           barCode: trimmedBarCode 
         }).then(res => {
-          if (res.code === 200 && res.data) {
+          if (res.code === 200 && res.data && res.data.rows && res.data.rows.length > 0) {
             // 使用返回的结果完整替换当前行内容
             const index = this.bomDataSource.findIndex(item => item.id === record.id)
             if (index !== -1) {
+              const rowData = res.data.rows[0] // 获取返回的第一条数据
               const oldId = record.id // 保留原来的临时ID
               const oldQty = record.qty // 保留原来的数量
               const oldRemark = record.remark // 保留原来的备注
               
               // 完整替换当前行，使用接口返回的数据
               this.$set(this.bomDataSource, index, {
-                ...res.data, // 使用返回的所有字段
-                id: oldId, // 保留临时ID
-                qty: oldQty || res.data.qty || 1, // 优先使用原数量
-                remark: oldRemark || res.data.remark || '', // 优先使用原备注
+                ...rowData, // 使用返回的所有字段
+                id: rowData.id, // 使用接口返回的ID
+                qty: oldQty || rowData.qty || 1, // 优先使用原数量
+                remark: oldRemark || rowData.remark || '', // 优先使用原备注
                 lastQueriedBarCode: trimmedBarCode, // 记录已查询的条码
                 isNew: false // 查询成功后取消新行标记，条码变为不可编辑
               })
@@ -764,11 +765,21 @@
           this.$message.warning('没有可保存的数据！')
           return
         }
-        // 提取 id、qty 和计算后的成本 totalPrice，批量传入
+        // 提取所有必要字段进行批量传入
         let rows = this.bomDataSource.map(item => ({
-          id: item.id,
-          qty: item.qty || 1,
-          totalPrice: item.totalPrice || 0
+          id: item.id, // 使用接口返回的ID或已存在的ID
+          bomId: this.selectedMaterial.id, // 当前操作的bomId
+          productName: item.productName, // 商品名称，来自queryByBarCode接口返回
+          materialName: item.materialName, // 物料名称，来自queryByBarCode接口返回
+          materialId: item.materialId, // 物料ID
+          barCode: item.barCode, // 条码
+          qty: item.qty || 1, // 数量
+          purchaseDecimal: item.purchaseDecimal || 0, // 采购单价
+          wholesaleDecimal: item.wholesaleDecimal || 0, // 销售单价
+          cost: ((item.qty || 1) * (item.purchaseDecimal || 0)).toFixed(2), // 计算成本：数量 × 采购单价
+          totalPrice: item.totalPrice || 0, // 总价
+          version: item.version || '1.0', // 版本号
+          remark: item.remark || '' // 备注
         }))
         let params = {
           rows: JSON.stringify(rows)
