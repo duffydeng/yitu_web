@@ -161,7 +161,8 @@
             :scroll="scroll"
             :loading="loading"
             :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth:'40px'}"
-            @change="handleTableChange">
+            @change="handleTableChange"
+            :customRow="customRow">
             <span slot="action" slot-scope="text, record">
               <a @click="handleEdit(record)">编辑</a>
               <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
@@ -519,12 +520,14 @@
         this.$refs.modalForm.add();
         this.$refs.modalForm.title = "新增";
         this.$refs.modalForm.disableSubmit = false;
+        this.$refs.modalForm.showOkFlag = true; // 显示保存按钮
       },
       handleEdit: function (record) {
         this.$refs.modalForm.action = "edit";
         this.$refs.modalForm.edit(record);
         this.$refs.modalForm.title = "编辑";
         this.$refs.modalForm.disableSubmit = false;
+        this.$refs.modalForm.showOkFlag = true; // 显示保存按钮
         if(this.btnEnableList.indexOf(1)===-1) {
           this.$refs.modalForm.showOkFlag = false
         }
@@ -534,6 +537,7 @@
         this.$refs.modalForm.edit(record);
         this.$refs.modalForm.title = "复制新增";
         this.$refs.modalForm.disableSubmit = false;
+        this.$refs.modalForm.showOkFlag = true; // 显示保存按钮
       },
       getImgUrl(imgName, type) {
         if(imgName && imgName.split(',')) {
@@ -542,6 +546,27 @@
         } else {
           return ''
         }
+      },
+      // 自定义行属性，支持双击查看详情
+      customRow(record, index) {
+        return {
+          on: {
+            dblclick: () => {
+              this.handleViewDetail(record)
+            }
+          }
+        }
+      },
+      // 查看详情
+      handleViewDetail(record) {
+        this.$refs.modalForm.action = "view";
+        this.$refs.modalForm.edit(record);
+        this.$refs.modalForm.title = "商品详情";
+        this.$refs.modalForm.disableSubmit = false; // 允许编辑
+        this.$refs.modalForm.showOkFlag = true; // 显示保存按钮
+        
+        // 确保移除任何只读样式
+        this.removeReadOnlyStyles();
       },
       handleImportXls() {
         let importExcelUrl = this.url.importExcelUrl
