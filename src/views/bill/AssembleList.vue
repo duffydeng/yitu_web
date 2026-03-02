@@ -160,7 +160,7 @@
         </div>
         <!-- table区域-end -->
         <!-- 表单区域 -->
-        <assemble-modal ref="modalForm" @ok="modalFormOk" @close="modalFormClose"></assemble-modal>
+        <assemble-form-modal ref="modalForm" @ok="modalFormOk" @close="modalFormClose"></assemble-form-modal>
         <bill-detail ref="modalDetail" @ok="modalFormOk" @close="modalFormClose"></bill-detail>
         <bill-excel-iframe ref="billExcelIframe" @ok="modalFormOk" @close="modalFormClose"></bill-excel-iframe>
       </a-card>
@@ -169,7 +169,7 @@
 </template>
 <!--power by ji sheng hua-->
 <script>
-  import AssembleModal from './modules/AssembleModal'
+  import AssembleFormModal from './modules/AssembleFormModal'
   import BillDetail from './dialog/BillDetail'
   import BillExcelIframe from '@/components/tools/BillExcelIframe'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
@@ -181,7 +181,7 @@
     name: "AssembleList",
     mixins:[JeecgListMixin,BillListMixin],
     components: {
-      AssembleModal,
+      AssembleFormModal,
       BillDetail,
       BillExcelIframe,
       JEllipsis,
