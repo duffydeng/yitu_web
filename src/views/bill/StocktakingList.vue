@@ -150,7 +150,7 @@
             @expand="onExpand"
             @change="handleTableChange">
             <span slot="action" slot-scope="text, record">
-              <a @click="myHandleDetail(record, '库存盘点', prefixNo)">查看</a>
+              <a @click="handleDetailModal(record)">查看</a>
               <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
               <a v-if="btnEnableList.indexOf(1)>-1" @click="myHandleEdit(record)">编辑</a>
               <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
@@ -286,6 +286,7 @@
       // 盘点单不需要待入库统计
       // this.initWaitBillCount('盘点', '盘点', '1,3')
     },
+
     methods: {
       // 重写新增方法，设置正确的type和subType
       myHandleAdd() {
@@ -423,6 +424,35 @@
         this.loadData()
         // this.initWaitBillCount('盘点', '盘点', '1,3')
       },
+      // 使用编辑组件以只读模式查看详情
+      handleDetailModal(record) {
+        // 查询单条单据信息
+        const { findBillDetailByNumber } = require('@/api/api')
+        findBillDetailByNumber({ number: record.number }).then((res) => {
+          if (res && res.code === 200) {
+            let item = res.data
+            this.$refs.modalForm.action = "edit";
+            this.$refs.modalForm.billType = '盘点'
+            this.$refs.modalForm.billSubType = '盘点'
+            this.$refs.modalForm.prefixNo = 'PD'
+            this.$refs.modalForm.disableSubmit = true; // 禁用保存按钮
+            this.$refs.modalForm.rowCanEdit = false;  // 禁用编辑
+            this.$refs.modalForm.title = "库存盘点-查看";
+            this.$refs.modalForm.edit(item);
+            
+            // 设置盘点单特有的编辑模式相关属性
+            let columnIndex = item.subType === '组装单' || item.subType === '拆卸单'?2:1
+            const FormTypes = require('@/utils/JEditableTableUtil').FormTypes
+            this.$refs.modalForm.materialTable.columns[columnIndex].type = FormTypes.normal
+          } else {
+            this.$message.error('获取单据详情失败')
+          }
+        }).catch(() => {
+          this.$message.error('获取单据详情失败')
+        })
+      },
+
+
     }
   }
 </script>
