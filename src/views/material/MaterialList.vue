@@ -521,6 +521,15 @@
         this.$refs.modalForm.title = "新增";
         this.$refs.modalForm.disableSubmit = false;
         this.$refs.modalForm.showOkFlag = true; // 显示保存按钮
+
+        // 如果查询条件中有类别，将类别带到新增弹窗中
+        if (this.queryParam.categoryId) {
+          this.$nextTick(() => {
+            this.$refs.modalForm.form.setFieldsValue({
+              categoryId: this.queryParam.categoryId
+            });
+          });
+        }
       },
       handleEdit: function (record) {
         this.$refs.modalForm.action = "edit";
@@ -564,7 +573,7 @@
         this.$refs.modalForm.title = "商品详情";
         this.$refs.modalForm.disableSubmit = false; // 允许编辑
         this.$refs.modalForm.showOkFlag = true; // 显示保存按钮
-        
+
         // 确保移除任何只读样式
         this.removeReadOnlyStyles();
       },
@@ -586,14 +595,14 @@
 </script>
 <style scoped>
   @import '~@assets/less/common.less';
-  
+
   .material-list-container {
     display: flex;
     width: 100%;
     height: 100%;
     position: relative;
   }
-  
+
   .category-tree-panel {
     width: 250px;
     min-width: 250px;
@@ -603,12 +612,12 @@
     display: flex;
     flex-direction: column;
   }
-  
+
   .category-tree-panel.collapsed {
     width: 40px;
     min-width: 40px;
   }
-  
+
   .category-tree-header {
     height: 48px;
     line-height: 48px;
@@ -621,32 +630,32 @@
     user-select: none;
     background: #fafafa;
   }
-  
+
   .category-tree-header:hover {
     background: #f0f0f0;
   }
-  
+
   .category-tree-header i {
     font-size: 16px;
     color: #666;
   }
-  
+
   .category-tree-content {
     flex: 1;
     overflow-y: auto;
     padding: 8px;
   }
-  
+
   .category-tree-panel.collapsed .category-tree-content {
     display: none;
   }
-  
+
   .material-content-panel {
     flex: 1;
     min-width: 0;
     padding-left: 12px;
   }
-  
+
   .item-info {
     float:left;
     width:38px;
@@ -667,7 +676,7 @@
   .resize-table-th {
     position: relative;
   }
-  
+
   .table-draggable-handle {
     position: absolute;
     height: 100% !important;
@@ -676,7 +685,7 @@
     cursor: col-resize;
     touch-action: none;
   }
-  
+
   .table-draggable-handle:hover {
     border-right: 2px solid #1890ff;
   }
