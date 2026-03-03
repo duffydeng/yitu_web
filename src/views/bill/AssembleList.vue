@@ -246,6 +246,47 @@
       this.initUser()
     },
     methods: {
+      // 自定义导出方法，使用/depotHead/export接口
+      handleExport() {
+        // 导入downFile函数
+        const { downFile } = require('@/api/manage')
+        
+        // 获取查询参数
+        let param = {...this.queryParam}
+        // 添加单据类型筛选
+        param.type = "其它"
+        param.subType = "组装单"
+        
+        // 如果有选中的行，则只导出选中的数据
+        if(this.selectedRowKeys && this.selectedRowKeys.length>0){
+          param['selections'] = this.selectedRowKeys.join(",")
+        }
+        
+        console.log("组装单导出参数", param)
+        
+        // 调用导出接口
+        downFile('/depotHead/export', param).then((data)=> {
+          if (!data) {
+            this.$message.warning("文件下载失败")
+            return
+          }
+          if (typeof window.navigator.msSaveBlob !== 'undefined') {
+            window.navigator.msSaveBlob(new Blob([data],{type: 'application/vnd.ms-excel'}), '组装单列表导出.xls')
+          }else{
+            let url = window.URL.createObjectURL(new Blob([data],{type: 'application/vnd.ms-excel'}))
+            let link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = url
+            link.setAttribute('download', '组装单列表导出_' + new Date().getTime() + '.xls')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link); //下载完成移除元素
+            window.URL.revokeObjectURL(url); //释放掉blob对象
+          }
+        }).catch(() => {
+          this.$message.error("导出失败")
+        })
+      }
     }
   }
 </script>
