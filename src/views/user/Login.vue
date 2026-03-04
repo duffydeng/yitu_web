@@ -251,7 +251,7 @@
                 if(res.data.platformValue) {
                   Vue.ls.set('isShowExcel', true);
                 } else {
-                  Vue.ls.set('isShowExcel', false);
+                  Vue.ls.set('isShowExcel', true);
                 }
               }
             })
