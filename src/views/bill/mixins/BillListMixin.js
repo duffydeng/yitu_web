@@ -528,10 +528,17 @@ export const BillListMixin = {
       }
     },
     myHandleDetail(record, type, prefixNo) {
-      if (this.btnEnableList.indexOf(7) === -1) {
-        this.$refs.modalDetail.isCanBackCheck = false
-      }
-      this.handleDetail(record, type, prefixNo);
+      this.$nextTick(() => {
+        if (this.$refs.modalDetail) {
+          if (this.btnEnableList.indexOf(7) === -1) {
+            this.$refs.modalDetail.isCanBackCheck = false
+          }
+          this.handleDetail(record, type, prefixNo);
+        } else {
+          console.error('modalDetail组件未找到');
+          this.$message.error('详情组件未加载，请刷新页面重试');
+        }
+      });
     },
     batchForceClose: function () {
       if (!this.url.forceCloseBatch) {

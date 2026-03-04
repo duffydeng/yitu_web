@@ -128,7 +128,7 @@
             @expand="onExpand"
             @change="handleTableChange">
             <span slot="action" slot-scope="text, record">
-              <a @click="myHandleDetail(record, '请购单', prefixNo)">查看</a>
+              <a @click="handleDetailModal(record)">查看</a>
               <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
               <a v-if="btnEnableList.indexOf(1)>-1" @click="myHandleEdit(record)">编辑</a>
               <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
@@ -294,6 +294,28 @@
           }
         }).catch(() => {
           this.$message.error("导出失败")
+        })
+      },
+      // 使用编辑组件以只读模式查看详情
+      handleDetailModal(record) {
+        // 查询单条单据信息
+        const { findBillDetailByNumber } = require('@/api/api')
+        findBillDetailByNumber({ number: record.number }).then((res) => {
+          if (res && res.code === 200) {
+            let item = res.data
+            this.$refs.modalForm.action = "edit";
+            this.$refs.modalForm.billType = '采购'
+            this.$refs.modalForm.billSubType = '请购单'
+            this.$refs.modalForm.prefixNo = 'QGD'
+            this.$refs.modalForm.disableSubmit = true; // 禁用保存按钮
+            this.$refs.modalForm.rowCanEdit = false;  // 禁用编辑
+            this.$refs.modalForm.title = "请购单-查看";
+            this.$refs.modalForm.edit(item);
+          } else {
+            this.$message.error('获取单据详情失败')
+          }
+        }).catch(() => {
+          this.$message.error('获取单据详情失败')
         })
       }
     }
