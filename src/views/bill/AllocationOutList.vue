@@ -258,9 +258,8 @@
           sqp['superQueryMatchType'] = this.superQueryMatchType
         }
         let searchObj = {}
-        // 添加单据类型筛选到查询参数中
-        let exportQueryParam = {...this.queryParam, type: "其它", subType: "调拨出库"}
-        searchObj.search = JSON.stringify(exportQueryParam);
+        // 使用queryParam中原始的type和subType配置
+        searchObj.search = JSON.stringify(this.queryParam);
         var param = Object.assign(sqp, searchObj, this.isorter, this.filters);
         param.field = this.getQueryField();
         
