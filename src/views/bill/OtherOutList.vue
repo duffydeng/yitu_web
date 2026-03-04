@@ -364,11 +364,18 @@
         // 导入downFile函数
         const { downFile } = require('@/api/manage')
         
-        // 获取查询参数
-        let param = {...this.queryParam}
-        // 添加单据类型筛选
-        param.type = "其它"
-        param.subType = "其它出库"
+        // 获取与列表接口相同的查询参数（除了分页）
+        let sqp = {}
+        if(this.superQueryParams){
+          sqp['superQueryParams']=encodeURI(this.superQueryParams)
+          sqp['superQueryMatchType'] = this.superQueryMatchType
+        }
+        let searchObj = {}
+        // 添加单据类型筛选到查询参数中
+        let exportQueryParam = {...this.queryParam, type: "其它", subType: "其它出库"}
+        searchObj.search = JSON.stringify(exportQueryParam);
+        var param = Object.assign(sqp, searchObj, this.isorter, this.filters);
+        param.field = this.getQueryField();
         
         // 如果有选中的行，则只导出选中的数据
         if(this.selectedRowKeys && this.selectedRowKeys.length>0){

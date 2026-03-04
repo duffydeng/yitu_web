@@ -439,7 +439,7 @@
             this.$refs.modalForm.rowCanEdit = false;  // 禁用编辑
             this.$refs.modalForm.title = "库存盘点-查看";
             this.$refs.modalForm.edit(item);
-            
+
             // 设置盘点单特有的编辑模式相关属性
             let columnIndex = item.subType === '组装单' || item.subType === '拆卸单'?2:1
             const FormTypes = require('@/utils/JEditableTableUtil').FormTypes
@@ -455,20 +455,27 @@
       handleExport() {
         // 导入downFile函数
         const { downFile } = require('@/api/manage')
-        
-        // 获取查询参数
-        let param = {...this.queryParam}
-        // 添加单据类型筛选
-        param.type = "其它"
-        param.subType = "盘点"
-        
+
+        // 获取与列表接口相同的查询参数（除了分页）
+        let sqp = {}
+        if(this.superQueryParams){
+          sqp['superQueryParams']=encodeURI(this.superQueryParams)
+          sqp['superQueryMatchType'] = this.superQueryMatchType
+        }
+        let searchObj = {}
+        // 添加单据类型筛选到查询参数中
+        let exportQueryParam = {...this.queryParam, type: "盘点", subType: "盘点"}
+        searchObj.search = JSON.stringify(exportQueryParam);
+        var param = Object.assign(sqp, searchObj, this.isorter, this.filters);
+        param.field = this.getQueryField();
+
         // 如果有选中的行，则只导出选中的数据
         if(this.selectedRowKeys && this.selectedRowKeys.length>0){
           param['selections'] = this.selectedRowKeys.join(",")
         }
-        
+
         console.log("盘点单导出参数", param)
-        
+
         // 调用导出接口
         downFile('/depotHead/export', param).then((data)=> {
           if (!data) {
