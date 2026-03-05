@@ -43,6 +43,7 @@
           :row-selection="{selectedRowKeys: selectedRowKeys, type: 'radio', onChange: onSelectChange}"
           @change="handleTableChange"
           :customRow="customRow"
+          :components="handleDrag(columns)"
         >
         </a-table>
       </a-card>
@@ -100,13 +101,11 @@
                   <template slot="content">
                     <a-checkbox-group @change="onBomColChange" v-model="bomSettingDataIndex">
                       <a-row style="width: 400px">
-                        <template v-for="(item,index) in bomDefColumns">
-                          <a-col :span="12" :key="index">
-                            <a-checkbox :value="item.dataIndex">
-                              {{ item.title }}
-                            </a-checkbox>
-                          </a-col>
-                        </template>
+                        <a-col v-for="(item,index) in bomDefColumns" :span="12" :key="index">
+                          <a-checkbox :value="item.dataIndex">
+                            {{ item.title }}
+                          </a-checkbox>
+                        </a-col>
                       </a-row>
                       <a-row style="padding-top: 10px;">
                         <a-col>
@@ -1137,4 +1136,5 @@
     cursor: col-resize;
     z-index: 11;
   }
+
 </style>
