@@ -9,11 +9,12 @@
       </div>
       <div v-if="!categoryTreeCollapsed" class="category-tree-content">
         <a-tree
+          checkable
           :treeData="categoryTreeForSelect"
           :expandedKeys="categoryExpandedKeys"
           @expand="onCategoryExpand"
-          @select="onCategoryTreeSelect"
-          :selectedKeys="categorySelectedKeys"
+          @check="onCategoryTreeCheck"
+          :checkedKeys="categoryCheckedKeys"
           :defaultExpandAll="false"
         >
         </a-tree>
@@ -32,7 +33,8 @@
               <a-col :md="6" :sm="24">
                 <a-form-item label="类别" :labelCol="labelCol" :wrapperCol="wrapperCol">
                   <a-tree-select style="width:100%" :dropdownStyle="{maxHeight:'200px',overflow:'auto'}" allow-clear
-                   :treeData="categoryTree" v-model="queryParam.categoryId" placeholder="请选择类别">
+                   treeCheckable :showCheckedStrategy="'SHOW_PARENT'"
+                   :treeData="categoryTree" v-model="queryParam.categoryIds" placeholder="请选择类别（可多选）">
                   </a-tree-select>
                 </a-form-item>
               </a-col>
@@ -241,7 +243,7 @@
         categoryTreeForSelect: [],
         categoryTreeCollapsed: false,
         categoryExpandedKeys: [],
-        categorySelectedKeys: [],
+        categoryCheckedKeys: [],
         mPropertyListShort: '',
         model: {},
         labelCol: {
@@ -258,7 +260,7 @@
         },
         // 查询条件
         queryParam: {
-          categoryId: undefined,
+          categoryIds: undefined,
           materialParam:'',
           standard:'',
           model:'',
@@ -423,19 +425,13 @@
       onCategoryExpand(expandedKeys) {
         this.categoryExpandedKeys = expandedKeys;
       },
-      // 类别树选择事件
-      onCategoryTreeSelect(selectedKeys, e) {
-        if (selectedKeys && selectedKeys.length > 0) {
-          this.categorySelectedKeys = selectedKeys;
-          // 设置查询条件
-          this.queryParam.categoryId = selectedKeys[0];
-          // 自动查询
-          this.searchQuery();
-        } else {
-          this.categorySelectedKeys = [];
-          this.queryParam.categoryId = undefined;
-          this.searchQuery();
-        }
+      // 类别树勾选事件（多选）
+      onCategoryTreeCheck(checkedKeys) {
+        // checkedKeys 可能是数组（checkStrictly=false）或 {checked,halfChecked}（checkStrictly=true）
+        let keys = Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked
+        this.categoryCheckedKeys = keys
+        this.queryParam.categoryIds = keys.length > 0 ? keys.join(',') : undefined
+        this.searchQuery()
       },
       // 切换类别树折叠状态
       toggleCategoryTree() {
@@ -521,15 +517,6 @@
         this.$refs.modalForm.title = "新增";
         this.$refs.modalForm.disableSubmit = false;
         this.$refs.modalForm.showOkFlag = true; // 显示保存按钮
-
-        // 如果查询条件中有类别，将类别带到新增弹窗中
-        if (this.queryParam.categoryId) {
-          this.$nextTick(() => {
-            this.$refs.modalForm.form.setFieldsValue({
-              categoryId: this.queryParam.categoryId
-            });
-          });
-        }
       },
       handleEdit: function (record) {
         this.$refs.modalForm.action = "edit";
@@ -585,6 +572,7 @@
         this.$refs.modalImportForm.title = "商品导入";
       },
       searchReset() {
+        this.categoryCheckedKeys = []
         this.queryParam = {
           mpList: getMpListShort(Vue.ls.get('materialPropertyList'))  //扩展属性
         }

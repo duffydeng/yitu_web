@@ -209,11 +209,15 @@ export default {
         }
       }
     },
-    setThisExpandedKeys(node) {
+    setThisExpandedKeys(node, depth) {
+      if (depth === undefined) depth = 1
       if (node.children && node.children.length > 0) {
-        this.iExpandedKeys.push(node.key)
-        for (let a = 0; a < node.children.length; a++) {
-          this.setThisExpandedKeys(node.children[a])
+        // 只展开前两层（depth 1、2），第三级节点默认折叠
+        if (depth <= 2) {
+          this.iExpandedKeys.push(node.key)
+          for (let a = 0; a < node.children.length; a++) {
+            this.setThisExpandedKeys(node.children[a], depth + 1)
+          }
         }
       }
     },
