@@ -331,6 +331,7 @@
         unitChecked: false,
         switchDisabled: false, //开关的启用状态
         barCodeSwitch: false, //生成条码开关
+        queryCategoryIds: undefined, //外部传入的类别ids（用于getMaxBarCode接口）
         maxBarCodeInfo: '', //最大条码
         meDeleteIdList: [], //删除条码信息的id数组
         prefixNo: 'material',
@@ -576,7 +577,7 @@
           this.meOldDataSource = res.data.rows || []
           //复制新增商品-初始化条码信息
           if(this.action === 'copyAdd') {
-            getMaxBarCode({}).then((res)=> {
+            getMaxBarCode(this.queryCategoryIds ? { categoryIds: this.queryCategoryIds } : {}).then((res)=> {
               if (res && res.code === 200) {
                 let maxBarCode = res.data.barCode
                 let meTableData = []
@@ -1025,7 +1026,7 @@
             }
           }
           let meTableData = []
-          getMaxBarCode({}).then((res)=>{
+          getMaxBarCode(this.queryCategoryIds ? { categoryIds: this.queryCategoryIds } : {}).then((res)=>{
             if(res && res.code===200) {
               let k = 0
               let maxBarCode = res.data.barCode
@@ -1081,7 +1082,7 @@
           unit = this.form.getFieldValue('unit')
         }
         if(this.maxBarCodeInfo === '') {
-          getMaxBarCode({}).then((res)=> {
+          getMaxBarCode(this.queryCategoryIds ? { categoryIds: this.queryCategoryIds } : {}).then((res)=> {
             if (res && res.code === 200) {
               this.maxBarCodeInfo = res.data.barCode
               this.maxBarCodeInfo = addBigNumbers(this.maxBarCodeInfo, 1)
