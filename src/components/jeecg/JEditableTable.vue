@@ -112,7 +112,7 @@
                 :id="`${caseId}tbody-tr-${rowIndex}`"
                 :data-idx="rowIndex"
                 class="tr"
-                :class="selectedRowIds.indexOf(row.id) !== -1 ? 'tr-checked' : ''"
+                :class="[selectedRowIds.indexOf(row.id) !== -1 ? 'tr-checked' : '', rowClassName ? rowClassName(dataSource[rowIndex], rowIndex) : '']"
                 :style="buildTrStyle(rowIndex)"
                 :key="row.id">
                 <!-- 左侧固定td  -->
@@ -901,6 +901,11 @@
       dragSortKey: {
         type: String,
         default: 'orderNum'
+      },
+      // 动态行 class，传入函数 (record, rowIndex) => string
+      rowClassName: {
+        type: Function,
+        default: null
       },
     },
     data() {

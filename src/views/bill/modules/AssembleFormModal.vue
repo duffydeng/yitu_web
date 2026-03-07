@@ -47,6 +47,7 @@
           :rowNumber="true"
           :rowSelection="true"
           :actionButton="true"
+          :rowClassName="getBomRowClass"
           @valueChange="onValueChange"
           @added="onAdded"
           @deleted="onDeleted">
@@ -60,6 +61,9 @@
               </a-col>
               <a-col v-if="!scanStatus" :md="6" :sm="24" style="padding: 0px">
                 <a-button @click="stopScan">收起扫码</a-button>
+              </a-col>
+              <a-col :md="6" :sm="24">
+                <a-button icon="apartment" @click="handleExpandBom" :loading="bomLoading">拆解条码</a-button>
               </a-col>
             </a-row>
           </template>
@@ -106,6 +110,7 @@
   import { JEditableTableMixin } from '@/mixins/JEditableTableMixin'
   import { BillModalMixin } from '../mixins/BillModalMixin'
   import { getAction } from '@/api/manage'
+  import { getBomList } from '@/api/api'
   import { getMpListShort } from "@/utils/util"
   import JUpload from '@/components/jeecg/JUpload'
   import JDate from '@/components/jeecg/JDate'
@@ -171,10 +176,12 @@
               validateRules: [{ required: true, message: '${title}不能为空' }]
             },
             { title: '单价', key: 'unitPrice', width: '5%', type: FormTypes.inputNumber },
+            { title: '自定义费用', key: 'spcPrice', width: '6%', type: FormTypes.inputNumber },
             { title: '金额', key: 'allPrice', width: '5%', type: FormTypes.inputNumber },
             { title: '备注', key: 'remark', width: '5%', type: FormTypes.input }
           ]
         },
+        bomLoading: false,
         confirmLoading: false,
         validatorRules:{
           operTime:{
@@ -243,10 +250,14 @@
       classifyIntoFormData(allValues) {
         let totalPrice = 0
         let billMain = Object.assign(this.model, allValues.formValue)
-        let detailArr = allValues.tablesValue[0].values
+        let detailArr = allValues.tablesValue[0].values || []
         billMain.type = '其它'
         billMain.subType = '组装单'
         for(let item of detailArr){
+          item.spcPrice = item.spcPrice ? item.spcPrice-0 : 0
+          item.operNumber = item.operNumber ? item.operNumber-0 : 0
+          item.unitPrice = item.unitPrice ? item.unitPrice-0 : 0
+          item.allPrice = (item.operNumber*item.unitPrice + item.spcPrice).toFixed(2)-0
           totalPrice += item.allPrice-0
         }
         billMain.totalPrice = totalPrice
@@ -264,6 +275,105 @@
           rows: JSON.stringify(detailArr),
         }
       },
+      // hasBom=1 的行标红
+      getBomRowClass(record) {
+        return record && record.hasBom == 1 ? 'tr-has-bom' : ''
+      },
+      // 拆解条码：取表格第一行的条码，调 getBomList 接口，将子件列表填充到表格
+      handleExpandBom() {
+        let that = this
+        this.$refs[this.refKeys[0]].getValues((error, values) => {
+          if (error) return
+          // 找第一行有条码的组合件条码
+          let mainBarCode = ''
+          for (let i = 0; i < values.length; i++) {
+            if (values[i].barCode) {
+              mainBarCode = values[i].barCode
+              break
+            }
+          }
+          if (!mainBarCode) {
+            that.$message.warning('请先在表格中填入组合件条码！')
+            return
+          }
+          that.bomLoading = true
+          getBomList({ barCode: mainBarCode }).then((res) => {
+            if (res && res.code === 200) {
+              let bomData = res.data
+              if (!bomData || bomData.length === 0) {
+                that.$message.warning('该条码暂无 BOM 子件信息！')
+                return
+              }
+              // 获取当前默认仓库
+              getAction('/depot/findDepotByCurrentUser').then((depotRes) => {
+                let defaultDepotId = ''
+                if (depotRes && depotRes.code === 200) {
+                  let arr = depotRes.data
+                  if (arr.length === 1) {
+                    defaultDepotId = arr[0].id + ''
+                  } else {
+                    for (let i = 0; i < arr.length; i++) {
+                      if (arr[i].isDefault) {
+                        defaultDepotId = arr[i].id + ''
+                        break
+                      }
+                    }
+                  }
+                }
+                // 构造新数据行：第一行为组合件（保留原第一行），后续为子件
+                let newRows = []
+                // 保留组合件行（第一行）
+                if (values.length > 0 && values[0].barCode) {
+                  let mainRow = Object.assign({}, values[0])
+                  let hasBom = mainRow.hasBom
+                  mainRow.mType = (hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件'
+                  mainRow.spcPrice = mainRow.spcPrice ? mainRow.spcPrice-0 : 0
+                  mainRow.operNumber = mainRow.operNumber ? mainRow.operNumber-0 : 0
+                  mainRow.unitPrice = mainRow.unitPrice ? mainRow.unitPrice-0 : 0
+                  mainRow.allPrice = (mainRow.operNumber*mainRow.unitPrice + mainRow.spcPrice).toFixed(2)-0
+                  newRows.push(mainRow)
+                }
+                // 追加子件行
+                for (let i = 0; i < bomData.length; i++) {
+                  let item = bomData[i]
+                  let operNumber = item.operNumber || item.num || 1
+                  let unitPrice = item.unitPrice || item.billPrice || 0
+                  let spcPrice = item.spcPrice || 0
+                  newRows.push({
+                    mType: (item.hasBom == 1 || item.hasBom == '1') ? '组装件' : '普通子件',
+                    depotId: defaultDepotId || (values[0] && values[0].depotId) || '',
+                    barCode: item.mBarCode || item.barCode || '',
+                    name: item.name || '',
+                    standard: item.standard || '',
+                    model: item.model || '',
+                    color: item.color || '',
+                    brand: item.brand || '',
+                    mfrs: item.mfrs || '',
+                    otherField1: item.otherField1 || '',
+                    otherField2: item.otherField2 || '',
+                    otherField3: item.otherField3 || '',
+                    stock: item.stock || '',
+                    unit: item.commodityUnit || item.unit || '',
+                    sku: item.sku || '',
+                    hasBom: item.hasBom,
+                    operNumber: operNumber,
+                    unitPrice: unitPrice,
+                    spcPrice: spcPrice,
+                    allPrice: (operNumber*unitPrice + spcPrice).toFixed(2)-0,
+                    remark: item.remark || ''
+                  })
+                }
+                that.materialTable.dataSource = newRows
+                that.$message.success('拆解成功，共填入 ' + bomData.length + ' 条子件！')
+              })
+            } else {
+              that.$message.warning((res && res.message) || '拆解失败，请检查接口！')
+            }
+          }).finally(() => {
+            that.bomLoading = false
+          })
+        })
+      },
       onAdded(event) {
         const { row, target } = event
         getAction('/depot/findDepotByCurrentUser').then((res) => {
@@ -277,14 +387,16 @@
           }
         })
         if(target.rows.length>=2) {
-          target.setValues([{rowKey: row.id, values: {mType: '普通子件'}}])
+          target.setValues([{rowKey: row.id, values: {mType: '普通子件', spcPrice: 0}}])
         } else {
-          target.setValues([{rowKey: row.id, values: {mType: '组合件'}}])
+          target.setValues([{rowKey: row.id, values: {mType: '组装件', spcPrice: 0}}])
         }
       }
     }
   }
 </script>
 <style scoped>
-
+  >>> .tr-has-bom .td {
+    color: #f5222d;
+  }
 </style>

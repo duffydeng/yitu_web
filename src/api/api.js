@@ -60,6 +60,7 @@ const getSerialMaterialBySelect = (params)=>getAction("/material/getMaterialEnab
 const getMaterialByParam = (params)=>getAction("/material/getMaterialByParam",params);
 const getMaterialByBarCode = (params)=>getAction("/material/getMaterialByBarCode",params);
 const getMaxBarCode = (params)=>getAction("/material/getMaxBarCode",params);
+const getBomList = (params)=>getAction("/material/getBomList",params);
 const checkMaterialBarCode = (params)=>getAction("/materialsExtend/checkIsBarCodeExist",params);
 const batchUpdateMaterial = (params)=>postAction("/material/batchUpdate",params);
 const changeNameToPinYin = (params)=>postAction("/material/changeNameToPinYin",params);
@@ -163,6 +164,7 @@ export {
   getMaterialByParam,
   getMaterialByBarCode,
   getMaxBarCode,
+  getBomList,
   checkMaterialBarCode,
   batchUpdateMaterial,
   changeNameToPinYin,

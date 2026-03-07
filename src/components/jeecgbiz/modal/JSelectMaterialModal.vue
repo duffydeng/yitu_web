@@ -112,6 +112,7 @@
             :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange,type: getType}"
             :loading="loading"
             :customRow="rowAction"
+            :rowClassName="(record) => record.hasBom == 1 ? 'row-has-bom' : ''"
             @change="handleTableChange">
             <template slot="customBarCode" slot-scope="text, record">
               <div :style="record.imgName?'float:left;line-height:30px':'float:left;'">{{record.mBarCode}}</div>
@@ -128,6 +129,10 @@
               {{record.name}}
               <a-tag v-if="record.enableSerialNumber==1" color="orange">序</a-tag>
               <a-tag v-if="record.enableBatchNumber==1" color="orange">批</a-tag>
+            </template>
+            <template slot="customHasBom" slot-scope="text">
+              <a-tag v-if="text == 1" color="red">是</a-tag>
+              <span v-else>否</span>
             </template>
           </a-table>
         </div>
@@ -185,6 +190,7 @@
         columns: [
           {dataIndex: 'mBarCode', title: '条码', scopedSlots: { customRender: 'customBarCode' }},
           {dataIndex: 'name', title: '名称', scopedSlots: { customRender: 'customName' }},
+          {dataIndex: 'hasBom', title: 'BOM', width: 60, scopedSlots: { customRender: 'customHasBom' }},
           {dataIndex: 'categoryName', title: '类别'},
           {dataIndex: 'standard', title: '规格'},
           {dataIndex: 'model', title: '型号'},
@@ -445,6 +451,9 @@
   .ant-table-tbody .ant-table-row td {
     padding-top: 10px;
     padding-bottom: 10px;
+  }
+  >>> .row-has-bom td {
+    color: #f5222d;
   }
 
   #components-layout-demo-custom-trigger .trigger {
