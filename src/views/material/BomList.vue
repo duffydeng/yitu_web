@@ -61,9 +61,9 @@
               </a-col>
               <a-col :md="18" :sm="24">
                 <a-form-item label="商品名称" style="min-width: 300px;">
-                  <a-input 
-                    v-model="selectedMaterial.name" 
-                    :read-only="true" 
+                  <a-input
+                    v-model="selectedMaterial.name"
+                    :read-only="true"
                     style="border: none; box-shadow: none; width:100%; min-width: 300px;" />
                 </a-form-item>
               </a-col>
@@ -603,7 +603,7 @@
           return
         }
         // 获取选中的行
-        const selectedRows = this.bomDataSource.filter(item => 
+        const selectedRows = this.bomDataSource.filter(item =>
           this.bomSelectedRowKeys.includes(item.id)
         )
         // 复制选中的行，不包含id，生成新的临时id
@@ -632,23 +632,23 @@
         if (!record.isNew) {
           return // 非新复制的行不处理
         }
-        
+
         if (!this.selectedMaterial || !this.selectedMaterial.id) {
           this.$message.warning('请先选择商品')
           return
         }
-        
+
         const trimmedBarCode = barCode.trim()
         // 如果条码没有变化，不重复查询
         if (record.lastQueriedBarCode === trimmedBarCode && record.materialId) {
           return
         }
-        
+
         // 调用商品查询接口，传入bomId（即选中的商品ID）和条码
         this.bomLoading = true
-        getAction('/material/queryByBarCode', { 
+        getAction('/material/queryByBarCode', {
           bomId: this.selectedMaterial.id,
-          barCode: trimmedBarCode 
+          barCode: trimmedBarCode
         }).then(res => {
           if (res.code === 200 && res.data && res.data.rows && res.data.rows.length > 0) {
             // 使用返回的结果完整替换当前行内容
@@ -658,7 +658,7 @@
               const oldId = record.id // 保留原来的临时ID
               const oldQty = record.qty // 保留原来的数量
               const oldRemark = record.remark // 保留原来的备注
-              
+
               // 完整替换当前行，使用接口返回的数据
               this.$set(this.bomDataSource, index, {
                 ...rowData, // 使用返回的所有字段
@@ -789,7 +789,7 @@
             let message = res.data && res.data.message ? res.data.message : (res.data || '保存成功')
             this.$message.success(message)
             this.loadBomData(this.selectedMaterial.id)
-            this.searchQuery() // 刷新左侧列表的BOM状态
+            // this.searchQuery() // 刷新左侧列表的BOM状态
           } else {
             let errorMsg = res.data && res.data.message ? res.data.message : (res.data || '保存失败')
             this.$message.error(errorMsg)
@@ -812,7 +812,7 @@
       bomImportOk() {
         // 导入成功后刷新数据
         this.loadBomData(this.selectedMaterial.id)
-        this.searchQuery() // 刷新左侧列表的BOM状态
+        // this.searchQuery() // 刷新左侧列表的BOM状态
       },
       // 重写导出方法，使用BOM的导出接口
       handleBomExportXls(fileName) {
@@ -1037,7 +1037,7 @@
           if (res.code === 200) {
             this.$message.success(res.data || '批量添加成功')
             this.loadBomData(this.pendingBatchData.materialId)
-            this.searchQuery() // 刷新左侧列表的BOM状态
+            // this.searchQuery() // 刷新左侧列表的BOM状态
             this.versionModalVisible = false
             this.pendingBatchData = null
           } else {
