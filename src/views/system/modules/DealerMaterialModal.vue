@@ -52,7 +52,7 @@
           :row-selection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
           @change="handleTableChange"
         >
-          <span slot="materialName" slot-scope="text, record">
+          <span slot="productName" slot-scope="text, record">
             <a-tooltip :title="text" placement="topLeft" :autoAdjustOverflow="true">
               {{ text }}
             </a-tooltip>
@@ -61,19 +61,18 @@
       </a-spin>
     </a-modal>
     
-    <!-- 商品选择模态框 -->
-    <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
+    <j-select-product-modal ref="selectProductModal" :multi="true" @ok="selectProductOK" />
   </div>
 </template>
 
 <script>
   import { getAction, postAction, deleteAction } from '@/api/manage'
-  import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
+  import JSelectProductModal from '@/components/jeecgbiz/modal/JSelectProductModal'
 
   export default {
     name: "DealerMaterialModal",
     components: {
-      JSelectMaterialModal
+      JSelectProductModal
     },
     data () {
       return {
@@ -96,15 +95,9 @@
               return parseInt(index) + 1
             }
           },
-          { title: '商品条码', dataIndex: 'materialBarCode', width: 120 },
-          { title: '商品名称', dataIndex: 'materialName', width: 250, ellipsis: true, scopedSlots: { customRender: 'materialName' } },
-          { title: '规格', dataIndex: 'materialStandard', width: 120 },
-          { title: '型号', dataIndex: 'materialModel', width: 120 },
-          { title: '单位', dataIndex: 'materialUnit', width: 80 },
-          { title: '销售单价', dataIndex: 'materialSalePrice', width: 100 },
-          { title: '采购单价', dataIndex: 'materialPurchasePrice', width: 100 }
+          { title: '产品名称', dataIndex: 'productName', width: 350, ellipsis: true, scopedSlots: { customRender: 'productName' } }
         ],
-        materialScroll: { x: 1000 },
+        materialScroll: { x: 520 },
         materialPagination: {
           current: 1,
           pageSize: 10,
@@ -149,9 +142,10 @@
         }
         getAction(this.url.list, params).then(res => {
           if (res.code === 200) {
-            let data = res.data.rows || res.data
-            this.materialDataSource = Array.isArray(data) ? data : []
-            this.materialPagination.total = res.data.total || (Array.isArray(data) ? data.length : 0)
+            let data = res.data
+            let rows = (data && data.rows) || []
+            this.materialDataSource = Array.isArray(rows) ? rows : []
+            this.materialPagination.total = parseInt((data && data.total) || 0)
           } else {
             this.$message.warning(res.data || '获取数据失败')
             this.materialDataSource = []
@@ -165,9 +159,9 @@
         })
       },
       handleAddMaterial() {
-        this.$refs.selectMaterialModal.showModal()
+        this.$refs.selectProductModal.showModal()
       },
-      selectMaterialOK(rows, ids) {
+      selectProductOK(rows, ids) {
         if (!rows || rows.length === 0) {
           this.$message.warning('请选择要添加的商品！')
           return

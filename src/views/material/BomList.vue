@@ -30,6 +30,10 @@
           </a-form>
         </div>
 
+        <div class="bom-left-operator" style="margin-bottom: 10px;">
+          <a-button @click="handleOneKeyCopy" icon="copy">一键复制</a-button>
+        </div>
+
         <a-table
           ref="table"
           size="middle"
@@ -170,6 +174,7 @@
       </a-card>
     </div>
     <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
+    <j-select-product-modal ref="selectProductModal" :multi="false" @ok="selectProductCopyOK" />
     <import-file-modal ref="bomImportModal" @ok="bomImportOk"></import-file-modal>
     <!-- 版本选择模态框 -->
     <a-modal
@@ -293,6 +298,7 @@
   import JEditableTable from '@/components/jeecg/JEditableTable'
   import { FormTypes } from '@/utils/JEditableTableUtil'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
+  import JSelectProductModal from '@/components/jeecgbiz/modal/JSelectProductModal'
   import JEllipsis from '@/components/jeecg/JEllipsis'
   import ImportFileModal from '@/components/tools/ImportFileModal'
   import { getAction, postAction, downFile, deleteAction } from '@/api/manage'
@@ -303,6 +309,7 @@
     components: {
       JEditableTable,
       JSelectMaterialModal,
+      JSelectProductModal,
       JEllipsis,
       ImportFileModal
     },
@@ -537,6 +544,35 @@
         this.loadBomVersionList()
         this.loadBomData(record.id)
       },
+      handleOneKeyCopy() {
+        if (!this.selectedMaterial || !this.selectedMaterial.id) {
+          this.$message.warning('请先在左侧选择一个商品！')
+          return
+        }
+        this.$refs.selectProductModal.showModal()
+      },
+      selectProductCopyOK(rows) {
+        if (!rows || rows.length === 0) {
+          this.$message.warning('请选择商品！')
+          return
+        }
+        const target = rows[0]
+        if (!target || !target.id) {
+          this.$message.warning('请选择商品！')
+          return
+        }
+        this.bomLoading = true
+        postAction('/bomList/copy', { id: this.selectedMaterial.id, materiaId: target.id }).then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success((res.data && res.data.message) || '成功')
+            this.loadBomData(this.selectedMaterial.id)
+          } else {
+            this.$message.warning((res && res.data && res.data.message) || (res && res.message) || '复制失败')
+          }
+        }).finally(() => {
+          this.bomLoading = false
+        })
+      },
       // 加载BOM列表的版本号下拉选项
       loadBomVersionList() {
         if (!this.selectedMaterial || !this.selectedMaterial.id) {
@@ -658,6 +694,7 @@
               this.$set(this.bomDataSource, index, {
                 ...rowData, // 使用返回的所有字段
                 id: rowData.id, // 使用接口返回的ID
+                productName: rowData.productName || rowData.name,
                 qty: oldQty || rowData.qty || 1, // 优先使用原数量
                 remark: oldRemark || rowData.remark || '', // 优先使用原备注
                 lastQueriedBarCode: trimmedBarCode, // 记录已查询的条码
@@ -696,6 +733,7 @@
               materialId: row.id,
               barCode: row.mBarCode,
               materialName: row.name,
+              productName: row.name,
               purchaseDecimal: row.purchaseDecimal || 0,
               totalPrice: ((existing.qty || 1) * (row.purchaseDecimal || 0)).toFixed(2)
             })
