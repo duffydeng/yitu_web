@@ -141,14 +141,16 @@
                   />
                 </template>
                 <template slot="barCodeRender" slot-scope="text, record">
-                  <a-input
+                  <a-input-search
                     v-model="record.barCode"
-                    :disabled="!record.isNew"
                     style="width: 100%"
                     placeholder="请输入条码"
                     @blur="(e) => handleBarCodeBlur(e.target.value, record)"
                     @pressEnter="(e) => handleBarCodeBlur(e.target.value, record)"
-                  />
+                    @search="() => handleBarCodeSearch(record)"
+                  >
+                    <a-icon slot="enterButton" type="search" />
+                  </a-input-search>
                 </template>
                 <template slot="materialNameRender" slot-scope="text, record">
                   <a-tooltip :title="text" placement="topLeft" :autoAdjustOverflow="true">
@@ -425,7 +427,9 @@
         },
         // 拖拽相关
         leftWidth: 40, // 左侧面板宽度百分比，默认40%
-        isDragging: false
+        isDragging: false,
+        // 行内条码替换：记录当前正在替换条码的行
+        replacingRecord: null
       }
     },
     created() {
@@ -629,21 +633,12 @@
           this.$message.warning('请输入条码')
           return
         }
-        if (!record.isNew) {
-          return // 非新复制的行不处理
-        }
-        
         if (!this.selectedMaterial || !this.selectedMaterial.id) {
           this.$message.warning('请先选择商品')
           return
         }
         
         const trimmedBarCode = barCode.trim()
-        // 如果条码没有变化，不重复查询
-        if (record.lastQueriedBarCode === trimmedBarCode && record.materialId) {
-          return
-        }
-        
         // 调用商品查询接口，传入bomId（即选中的商品ID）和条码
         this.bomLoading = true
         getAction('/material/queryByBarCode', { 
@@ -680,7 +675,34 @@
           this.bomLoading = false
         })
       },
+      // 点击条码输入框旁的搜索按钮，打开物料弹窗替换当前行
+      handleBarCodeSearch(record) {
+        this.replacingRecord = record
+        this.$refs.selectMaterialModal.showModal()
+      },
       selectMaterialOK(rows, ids) {
+        // 行内替换模式：点击条码搜索按钮触发
+        if (this.replacingRecord) {
+          const record = this.replacingRecord
+          this.replacingRecord = null
+          if (!rows || rows.length === 0) return
+          const row = rows[0] // 只取第一条
+          const index = this.bomDataSource.findIndex(item => item.id === record.id)
+          if (index !== -1) {
+            const existing = this.bomDataSource[index]
+            this.$set(this.bomDataSource, index, {
+              ...existing,
+              // 只更新条码、物料名称、采购单价，其余字段（id、productName等）保持不变
+              materialId: row.id,
+              barCode: row.mBarCode,
+              materialName: row.name,
+              purchaseDecimal: row.purchaseDecimal || 0,
+              totalPrice: ((existing.qty || 1) * (row.purchaseDecimal || 0)).toFixed(2)
+            })
+          }
+          this.$message.success('已替换商品信息')
+          return
+        }
         // 由于弹窗已设置为多选模式(:multi="true")，先弹出版本选择框
         if (rows && Array.isArray(rows) && rows.length > 0) {
           if (!this.selectedMaterial.id) {
