@@ -174,7 +174,7 @@
       </a-card>
     </div>
     <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
-    <j-select-product-modal ref="selectProductModal" :multi="false" @ok="selectProductCopyOK" />
+    <j-select-material-modal ref="copyMaterialModal" :multi="false" @ok="selectCopyMaterialOK" />
     <import-file-modal ref="bomImportModal" @ok="bomImportOk"></import-file-modal>
     <!-- 版本选择模态框 -->
     <a-modal
@@ -298,7 +298,6 @@
   import JEditableTable from '@/components/jeecg/JEditableTable'
   import { FormTypes } from '@/utils/JEditableTableUtil'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
-  import JSelectProductModal from '@/components/jeecgbiz/modal/JSelectProductModal'
   import JEllipsis from '@/components/jeecg/JEllipsis'
   import ImportFileModal from '@/components/tools/ImportFileModal'
   import { getAction, postAction, downFile, deleteAction } from '@/api/manage'
@@ -309,7 +308,6 @@
     components: {
       JEditableTable,
       JSelectMaterialModal,
-      JSelectProductModal,
       JEllipsis,
       ImportFileModal
     },
@@ -549,9 +547,11 @@
           this.$message.warning('请先在左侧选择一个商品！')
           return
         }
-        this.$refs.selectProductModal.showModal()
+        if (this.$refs.copyMaterialModal && typeof this.$refs.copyMaterialModal.showModal === 'function') {
+          this.$refs.copyMaterialModal.showModal()
+        }
       },
-      selectProductCopyOK(rows) {
+      selectCopyMaterialOK(rows) {
         if (!rows || rows.length === 0) {
           this.$message.warning('请选择商品！')
           return

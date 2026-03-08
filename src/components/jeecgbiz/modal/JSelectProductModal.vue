@@ -63,7 +63,7 @@
     data () {
       return {
         visible: false,
-        title: '选择商品',
+        title: '选择商品(产品列表)',
         loading: false,
         queryParam: {
           name: '',
@@ -82,7 +82,7 @@
               return parseInt(index) + 1
             }
           },
-          { title: '名称', dataIndex: 'name', width: 260, ellipsis: true },
+          { title: '产品名称', dataIndex: 'name', width: 260, ellipsis: true },
           { title: '类型', dataIndex: 'productType', width: 100, align: 'center' },
           { title: '父级ID', dataIndex: 'parentId', width: 120, align: 'center' }
         ],
@@ -181,4 +181,3 @@
     }
   }
 </script>
-
