@@ -34,7 +34,8 @@
                 <a-form-item label="类别" :labelCol="labelCol" :wrapperCol="wrapperCol">
                   <a-tree-select style="width:100%" :dropdownStyle="{maxHeight:'200px',overflow:'auto'}" allow-clear
                    treeCheckable :showCheckedStrategy="'SHOW_PARENT'"
-                   :treeData="categoryTree" v-model="queryParam.categoryIds" placeholder="请选择类别（可多选）">
+                   :treeData="categoryTree" v-model="queryParam.categoryIds" placeholder="请选择类别（可多选）"
+                   @change="onTopCategoryChange">
                   </a-tree-select>
                 </a-form-item>
               </a-col>
@@ -425,6 +426,15 @@
       onCategoryExpand(expandedKeys) {
         this.categoryExpandedKeys = expandedKeys;
       },
+      // 顶部类别树选择器 change 事件，将对象数组转为逗号字符串
+      onTopCategoryChange(values) {
+        if (!values || values.length === 0) {
+          this.queryParam.categoryIds = undefined
+        } else {
+          let ids = values.map(item => (typeof item === 'object' ? item.value : item))
+          this.queryParam.categoryIds = ids.join(',')
+        }
+      },
       // 类别树勾选事件（多选）
       onCategoryTreeCheck(checkedKeys) {
         // checkedKeys 可能是数组（checkStrictly=false）或 {checked,halfChecked}（checkStrictly=true）
@@ -513,6 +523,12 @@
       },
       handleAdd: function () {
         this.$refs.modalForm.action = "add";
+        // categoryIds 可能是逗号字符串（左侧树勾选）或对象数组（顶部树选择器），统一转为逗号字符串
+        let cids = this.queryParam.categoryIds
+        if (Array.isArray(cids)) {
+          cids = cids.map(item => (typeof item === 'object' ? item.value : item)).join(',')
+        }
+        this.$refs.modalForm.queryCategoryIds = cids || undefined;
         this.$refs.modalForm.add();
         this.$refs.modalForm.title = "新增";
         this.$refs.modalForm.disableSubmit = false;

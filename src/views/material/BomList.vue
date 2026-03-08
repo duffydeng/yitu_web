@@ -30,6 +30,10 @@
           </a-form>
         </div>
 
+        <div class="bom-left-operator" style="margin-bottom: 10px;">
+          <a-button @click="handleOneKeyCopy" icon="copy">一键复制</a-button>
+        </div>
+
         <a-table
           ref="table"
           size="middle"
@@ -141,14 +145,16 @@
                   />
                 </template>
                 <template slot="barCodeRender" slot-scope="text, record">
-                  <a-input
+                  <a-input-search
                     v-model="record.barCode"
-                    :disabled="!record.isNew"
                     style="width: 100%"
                     placeholder="请输入条码"
                     @blur="(e) => handleBarCodeBlur(e.target.value, record)"
                     @pressEnter="(e) => handleBarCodeBlur(e.target.value, record)"
-                  />
+                    @search="() => handleBarCodeSearch(record)"
+                  >
+                    <a-icon slot="enterButton" type="search" />
+                  </a-input-search>
                 </template>
                 <template slot="materialNameRender" slot-scope="text, record">
                   <a-tooltip :title="text" placement="topLeft" :autoAdjustOverflow="true">
@@ -168,6 +174,7 @@
       </a-card>
     </div>
     <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
+    <j-select-material-modal ref="copyMaterialModal" :multi="false" @ok="selectCopyMaterialOK" />
     <import-file-modal ref="bomImportModal" @ok="bomImportOk"></import-file-modal>
     <!-- 版本选择模态框 -->
     <a-modal
@@ -425,7 +432,9 @@
         },
         // 拖拽相关
         leftWidth: 40, // 左侧面板宽度百分比，默认40%
-        isDragging: false
+        isDragging: false,
+        // 行内条码替换：记录当前正在替换条码的行
+        replacingRecord: null
       }
     },
     created() {
@@ -532,6 +541,37 @@
         this.bomQueryVersion = undefined // 重置版本查询条件
         this.loadBomVersionList()
         this.loadBomData(record.id)
+      },
+      handleOneKeyCopy() {
+        if (!this.selectedMaterial || !this.selectedMaterial.id) {
+          this.$message.warning('请先在左侧选择一个商品！')
+          return
+        }
+        if (this.$refs.copyMaterialModal && typeof this.$refs.copyMaterialModal.showModal === 'function') {
+          this.$refs.copyMaterialModal.showModal()
+        }
+      },
+      selectCopyMaterialOK(rows) {
+        if (!rows || rows.length === 0) {
+          this.$message.warning('请选择商品！')
+          return
+        }
+        const target = rows[0]
+        if (!target || !target.id) {
+          this.$message.warning('请选择商品！')
+          return
+        }
+        this.bomLoading = true
+        postAction('/bomList/copy', { id: this.selectedMaterial.id, materiaId: target.id }).then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success((res.data && res.data.message) || '成功')
+            this.loadBomData(this.selectedMaterial.id)
+          } else {
+            this.$message.warning((res && res.data && res.data.message) || (res && res.message) || '复制失败')
+          }
+        }).finally(() => {
+          this.bomLoading = false
+        })
       },
       // 加载BOM列表的版本号下拉选项
       loadBomVersionList() {
@@ -663,6 +703,7 @@
               this.$set(this.bomDataSource, index, {
                 ...rowData, // 使用返回的所有字段
                 id: rowData.id, // 使用接口返回的ID
+                productName: rowData.productName || rowData.name,
                 qty: oldQty || rowData.qty || 1, // 优先使用原数量
                 remark: oldRemark || rowData.remark || '', // 优先使用原备注
                 lastQueriedBarCode: trimmedBarCode, // 记录已查询的条码
@@ -680,7 +721,35 @@
           this.bomLoading = false
         })
       },
+      // 点击条码输入框旁的搜索按钮，打开物料弹窗替换当前行
+      handleBarCodeSearch(record) {
+        this.replacingRecord = record
+        this.$refs.selectMaterialModal.showModal()
+      },
       selectMaterialOK(rows, ids) {
+        // 行内替换模式：点击条码搜索按钮触发
+        if (this.replacingRecord) {
+          const record = this.replacingRecord
+          this.replacingRecord = null
+          if (!rows || rows.length === 0) return
+          const row = rows[0] // 只取第一条
+          const index = this.bomDataSource.findIndex(item => item.id === record.id)
+          if (index !== -1) {
+            const existing = this.bomDataSource[index]
+            this.$set(this.bomDataSource, index, {
+              ...existing,
+              // 只更新条码、物料名称、采购单价，其余字段（id、productName等）保持不变
+              materialId: row.id,
+              barCode: row.mBarCode,
+              materialName: row.name,
+              productName: row.name,
+              purchaseDecimal: row.purchaseDecimal || 0,
+              totalPrice: ((existing.qty || 1) * (row.purchaseDecimal || 0)).toFixed(2)
+            })
+          }
+          this.$message.success('已替换商品信息')
+          return
+        }
         // 由于弹窗已设置为多选模式(:multi="true")，先弹出版本选择框
         if (rows && Array.isArray(rows) && rows.length > 0) {
           if (!this.selectedMaterial.id) {

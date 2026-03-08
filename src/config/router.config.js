@@ -20,6 +20,12 @@ export const asyncRouterMap = [
         meta: { title: 'BOM管理', keepAlive: true }
       },
       {
+        path: '/product/category',
+        name: 'ProductCategoryList',
+        component: () => import('@/views/product/ProductCategoryList'),
+        meta: { title: '产品分类', keepAlive: true }
+      },
+      {
         path: '/system/dealer',
         name: 'DealerList',
         component: () => import('@/views/system/DealerList'),

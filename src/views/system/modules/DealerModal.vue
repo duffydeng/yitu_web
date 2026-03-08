@@ -16,9 +16,8 @@
       okText="保存"
       style="top:5%;height: 90%;">
       <template slot="footer">
-        <a-button key="back" v-if="isReadOnly" @click="handleCancel">
-          取消
-        </a-button>
+        <a-button key="back" @click="handleCancel">取消</a-button>
+        <a-button key="submit" type="primary" v-if="!isReadOnly" :loading="confirmLoading" @click="handleOk">保存</a-button>
       </template>
       <a-spin :spinning="confirmLoading">
         <a-form :form="form" id="dealerModal">
@@ -120,7 +119,7 @@
 
 <script>
   import pick from 'lodash.pick'
-  import { getAction, postAction, deleteAction } from '@/api/manage'
+  import { getAction, httpAction } from '@/api/manage'
   import { validateDuplicateValue } from '@/utils/util'
 
   export default {
@@ -235,13 +234,13 @@
                method = 'put';
             }
             let formData = Object.assign(this.model, values);
-            console.log("表单提交数据",formData)
-            postAction(httpurl,formData,method).then((res)=>{
-              if(res.success){
-                that.$message.success(res.message);
+            httpAction(httpurl, formData, method).then((res)=>{
+              if(res && res.code === 200){
+                that.$message.success((res.data && res.data.message) || '保存成功');
                 that.$emit('ok');
+                that.close();
               }else{
-                that.$message.warning(res.message);
+                that.$message.warning((res && res.data && res.data.message) || (res && res.message) || '保存失败');
               }
             }).finally(() => {
               that.confirmLoading = false;

@@ -475,7 +475,7 @@ export const BillModalMixin = {
     onValueChange(event) {
       let that = this
       const { type, row, column, value, target } = event
-      let param,snList,batchNumber,operNumber,unitPrice,allPrice,taxRate,taxMoney,taxLastMoney
+      let param,snList,batchNumber,operNumber,unitPrice,allPrice,taxRate,taxMoney,taxLastMoney,spcPrice
       switch(column.key) {
         case "depotId":
           that.currentSelectDepotId = row.depotId
@@ -515,10 +515,15 @@ export const BillModalMixin = {
                     allPriceTotal += mArr[j].allPrice-0
                     taxLastMoneyTotal += mArr[j].taxLastMoney-0
                     //组合和拆分单据给商品类型进行重新赋值
-                    if(j===0) {
-                      mArr[0].mType = '组合件'
+                    if (this.prefixNo === 'ZZD') {
+                      let hasBom = mArr[j].hasBom
+                      mArr[j].mType = (hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件'
                     } else {
-                      mArr[j].mType = '普通子件'
+                      if(j===0) {
+                        mArr[0].mType = '组合件'
+                      } else {
+                        mArr[j].mType = '普通子件'
+                      }
                     }
                   }
                   this.materialTable.dataSource = mArr
@@ -623,7 +628,8 @@ export const BillModalMixin = {
           operNumber = value-0
           taxRate = row.taxRate-0 //税率
           unitPrice = row.unitPrice-0 //单价
-          allPrice = (unitPrice*operNumber).toFixed(2)-0
+          spcPrice = row.spcPrice ? row.spcPrice-0 : 0
+          allPrice = (this.prefixNo === 'ZZD' ? (unitPrice*operNumber + spcPrice) : (unitPrice*operNumber)).toFixed(2)-0
           taxMoney =((taxRate*0.01)*allPrice).toFixed(2)-0
           taxLastMoney = (allPrice + taxMoney).toFixed(2)-0
           target.setValues([{rowKey: row.id, values: {allPrice: allPrice, taxMoney: taxMoney, taxLastMoney: taxLastMoney}}])
@@ -634,7 +640,20 @@ export const BillModalMixin = {
           operNumber = row.operNumber-0 //数量
           unitPrice = value-0 //单价
           taxRate = row.taxRate-0 //税率
-          allPrice = (unitPrice*operNumber).toFixed(2)-0
+          spcPrice = row.spcPrice ? row.spcPrice-0 : 0
+          allPrice = (this.prefixNo === 'ZZD' ? (unitPrice*operNumber + spcPrice) : (unitPrice*operNumber)).toFixed(2)-0
+          taxMoney =((taxRate*0.01)*allPrice).toFixed(2)-0
+          taxLastMoney = (allPrice + taxMoney).toFixed(2)-0
+          target.setValues([{rowKey: row.id, values: {allPrice: allPrice, taxMoney: taxMoney, taxLastMoney: taxLastMoney}}])
+          target.recalcAllStatisticsColumns()
+          that.autoChangePrice(target)
+          break;
+        case "spcPrice":
+          spcPrice = value-0
+          operNumber = row.operNumber-0 //数量
+          unitPrice = row.unitPrice-0 //单价
+          taxRate = row.taxRate-0 //税率
+          allPrice = (unitPrice*operNumber + spcPrice).toFixed(2)-0
           taxMoney =((taxRate*0.01)*allPrice).toFixed(2)-0
           taxLastMoney = (allPrice + taxMoney).toFixed(2)-0
           target.setValues([{rowKey: row.id, values: {allPrice: allPrice, taxMoney: taxMoney, taxLastMoney: taxLastMoney}}])
@@ -645,7 +664,12 @@ export const BillModalMixin = {
           operNumber = row.operNumber-0 //数量
           taxRate = row.taxRate-0 //税率
           allPrice = value-0
-          unitPrice = (allPrice/operNumber).toFixed(4)-0 //单价
+          spcPrice = row.spcPrice ? row.spcPrice-0 : 0
+          if (this.prefixNo === 'ZZD') {
+            unitPrice = operNumber ? ((allPrice - spcPrice)/operNumber).toFixed(4)-0 : 0
+          } else {
+            unitPrice = (allPrice/operNumber).toFixed(4)-0 //单价
+          }
           taxMoney =((taxRate*0.01)*allPrice).toFixed(2)-0
           taxLastMoney = (allPrice + taxMoney).toFixed(2)-0
           target.setValues([{rowKey: row.id, values: {unitPrice: unitPrice, taxMoney: taxMoney, taxLastMoney: taxLastMoney}}])
@@ -685,6 +709,13 @@ export const BillModalMixin = {
     },
     //转为商品对象
     parseInfoToObj(mInfo) {
+      let isAssembleBill = this.prefixNo === 'ZZD'
+      let hasBom = mInfo.hasBom
+      let mType = isAssembleBill ? ((hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件') : undefined
+      let spcPrice = isAssembleBill ? 0 : undefined
+      let operNumber = 1
+      let unitPrice = mInfo.billPrice
+      let allPrice = isAssembleBill ? (unitPrice * operNumber + (spcPrice || 0)).toFixed(2)-0 : unitPrice
       return {
         barCode: mInfo.mBarCode,
         name: mInfo.name,
@@ -698,12 +729,15 @@ export const BillModalMixin = {
         otherField3: mInfo.otherField3,
         unit: mInfo.commodityUnit,
         sku: mInfo.sku,
-        operNumber: 1,
-        unitPrice: mInfo.billPrice,
-        allPrice: mInfo.billPrice,
+        hasBom: mInfo.hasBom,
+        mType: mType,
+        spcPrice: spcPrice,
+        operNumber: operNumber,
+        unitPrice: unitPrice,
+        allPrice: allPrice,
         taxRate: 0,
         taxMoney: 0,
-        taxLastMoney: mInfo.billPrice
+        taxLastMoney: allPrice
       }
     },
     //使得型号、颜色、扩展信息、sku等为隐藏
@@ -991,7 +1025,8 @@ export const BillModalMixin = {
                     //由于改变了商品数量，需要同时更新相关金额和价税合计
                     let taxRate = detail.taxRate-0 //税率
                     let unitPrice = detail.unitPrice-0 //单价
-                    detail.allPrice = (unitPrice*detail.operNumber).toFixed(2)-0
+                    let spcPrice = detail.spcPrice ? detail.spcPrice-0 : 0
+                    detail.allPrice = (this.prefixNo === 'ZZD' ? (unitPrice*detail.operNumber + spcPrice) : (unitPrice*detail.operNumber)).toFixed(2)-0
                     detail.taxMoney = ((taxRate*0.01)*detail.allPrice).toFixed(2)-0
                     detail.taxLastMoney = (detail.allPrice + detail.taxMoney).toFixed(2)-0
                     hasFinished = true
@@ -1030,10 +1065,12 @@ export const BillModalMixin = {
                   }
                   item.operNumber = 1
                   item.unitPrice = mInfo.billPrice
-                  item.allPrice = mInfo.billPrice
+                  item.spcPrice = this.prefixNo === 'ZZD' ? 0 : undefined
+                  item.allPrice = (this.prefixNo === 'ZZD' ? (item.unitPrice*item.operNumber + (item.spcPrice || 0)) : mInfo.billPrice).toFixed(2)-0
                   item.taxRate = 0
                   item.taxMoney = 0
-                  item.taxLastMoney = mInfo.billPrice
+                  item.taxLastMoney = item.allPrice
+                  item.hasBom = mInfo.hasBom
                   newDetailArr.push(item)
                 } else {
                   this.$message.warning('抱歉，此条码不存在商品信息！');
@@ -1041,10 +1078,15 @@ export const BillModalMixin = {
               }
               //组合和拆分单据给商品类型进行重新赋值
               for(let i=0; i< newDetailArr.length; i++) {
-                if(i===0) {
-                  newDetailArr[0].mType = '组合件'
+                if (this.prefixNo === 'ZZD') {
+                  let hasBom = newDetailArr[i].hasBom
+                  newDetailArr[i].mType = (hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件'
                 } else {
-                  newDetailArr[i].mType = '普通子件'
+                  if(i===0) {
+                    newDetailArr[0].mType = '组合件'
+                  } else {
+                    newDetailArr[i].mType = '普通子件'
+                  }
                 }
               }
               this.materialTable.dataSource = newDetailArr
