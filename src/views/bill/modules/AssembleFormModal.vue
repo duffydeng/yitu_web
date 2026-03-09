@@ -299,7 +299,7 @@
           that.bomLoading = true
           getBomList({ barCode: mainBarCode }).then((res) => {
             if (res && res.code === 200) {
-              let bomData = res.data
+              let bomData = res.data.rows || res.data
               if (!bomData || bomData.length === 0) {
                 that.$message.warning('该条码暂无 BOM 子件信息！')
                 return
@@ -337,7 +337,7 @@
                 for (let i = 0; i < bomData.length; i++) {
                   let item = bomData[i]
                   let operNumber = item.operNumber || item.num || 1
-                  let unitPrice = item.unitPrice || item.billPrice || 0
+                  let unitPrice = item.unitPrice || item.billPrice || item.purchaseDecimal || 0
                   let spcPrice = item.spcPrice || 0
                   newRows.push({
                     mType: (item.hasBom == 1 || item.hasBom == '1') ? '组装件' : '普通子件',
@@ -353,7 +353,7 @@
                     otherField2: item.otherField2 || '',
                     otherField3: item.otherField3 || '',
                     stock: item.stock || '',
-                    unit: item.commodityUnit || item.unit || '',
+                    unit: item.unit || item.commodityUnit || '',
                     sku: item.sku || '',
                     hasBom: item.hasBom,
                     operNumber: operNumber,

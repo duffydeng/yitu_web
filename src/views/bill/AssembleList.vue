@@ -314,6 +314,164 @@
         }).catch(() => {
           this.$message.error('获取单据详情失败')
         })
+      },
+      // 一键拆解功能
+      handleQuickDisassemble() {
+        if (this.selectedRowKeys.length !== 1) {
+          this.$message.warning('请选择一条记录进行拆解！')
+          return
+        }
+        
+        const selectedRecord = this.selectionRows[0]
+        if (selectedRecord.status !== '0') {
+          this.$message.warning('只有未审核的单据才能进行拆解！')
+          return
+        }
+        
+        this.disassembleLoading = true
+        const { getBomList } = require('@/api/api')
+        
+        // 获取选中记录的详情，找到组合件条码
+        this.findBillDetailForDisassemble(selectedRecord).then(billDetail => {
+          if (!billDetail || !billDetail.depotItemJsonList || billDetail.depotItemJsonList.length === 0) {
+            this.$message.warning('该单据没有商品信息，无法拆解！')
+            this.disassembleLoading = false
+            return
+          }
+          
+          // 查找第一个有BOM的组合件
+          let hasBomItem = billDetail.depotItemJsonList.find(item => 
+            item.barCode && (item.hasBom === '1' || item.hasBom === 1)
+          )
+          
+          if (!hasBomItem) {
+            this.$message.warning('该单据中没有可拆解的组合件！')
+            this.disassembleLoading = false
+            return
+          }
+          
+          const mainBarCode = hasBomItem.barCode
+          
+          // 调用拆解接口
+          getBomList({ barCode: mainBarCode }).then((res) => {
+            if (res && res.code === 200) {
+              const bomData = res.data.rows || res.data
+              if (!bomData || bomData.length === 0) {
+                this.$message.warning('该组合件暂无BOM子件信息！')
+                return
+              }
+              
+              // 将拆解数据添加到表格
+              this.addDisassembledDataToTable(bomData, selectedRecord)
+            } else {
+              this.$message.warning(res.message || '拆解失败！')
+            }
+          }).catch((error) => {
+            this.$message.error('拆解接口调用失败：' + (error.message || '未知错误'))
+          }).finally(() => {
+            this.disassembleLoading = false
+          })
+        }).catch((error) => {
+          this.$message.error('获取单据详情失败：' + (error.message || '未知错误'))
+          this.disassembleLoading = false
+        })
+      },
+      // 查询单据详情用于拆解
+      findBillDetailForDisassemble(record) {
+        return new Promise((resolve, reject) => {
+          const { findBillDetailByNumber } = require('@/api/api')
+          findBillDetailByNumber({ number: record.number }).then((res) => {
+            if (res && res.code === 200) {
+              resolve(res.data)
+            } else {
+              reject(new Error(res.message || '获取单据详情失败'))
+            }
+          }).catch((error) => {
+            reject(error)
+          })
+        })
+      },
+      // 将拆解后的数据添加到表格
+      addDisassembledDataToTable(bomData, selectedRecord) {
+        try {
+          // 获取默认仓库ID
+          this.getDefaultDepotId().then(defaultDepotId => {
+            // 将BOM数据转换为表格行格式
+            const newRows = bomData.map(item => {
+              const operNumber = item.operNumber || item.num || 1
+              const unitPrice = item.unitPrice || item.billPrice || item.purchaseDecimal || 0
+              const spcPrice = item.spcPrice || 0
+              
+              return {
+                id: Date.now() + Math.random(), // 临时ID
+                number: selectedRecord.number, // 使用原单据编号
+                materialsList: `${item.mBarCode || item.barCode || ''} ${item.name || ''} ${item.standard || ''} ${item.model || ''}`,
+                operTimeStr: selectedRecord.operTimeStr,
+                userName: selectedRecord.userName,
+                materialCount: 1, // 每行一个商品
+                totalPrice: (operNumber * unitPrice + spcPrice).toFixed(2),
+                remark: item.remark || selectedRecord.remark || '',
+                status: selectedRecord.status,
+                // 详细信息（用于展开显示）
+                depotName: this.getDepotNameById(defaultDepotId),
+                barCode: item.mBarCode || item.barCode || '',
+                name: item.name || '',
+                standard: item.standard || '',
+                model: item.model || '',
+                color: item.color || '',
+                brand: item.brand || '',
+                mfrs: item.mfrs || '',
+                otherField1: item.otherField1 || '',
+                otherField2: item.otherField2 || '',
+                otherField3: item.otherField3 || '',
+                stock: item.stock || 0,
+                unit: item.unit || item.commodityUnit || '',
+                sku: item.sku || '',
+                operNumber: operNumber,
+                unitPrice: unitPrice,
+                spcPrice: spcPrice,
+                allPrice: (operNumber * unitPrice + spcPrice).toFixed(2),
+                position: item.position || '',
+                hasBom: item.hasBom || 0
+              }
+            })
+            
+            // 将新行添加到数据源
+            this.dataSource = [...this.dataSource, ...newRows]
+            this.$message.success(`拆解成功，共添加 ${newRows.length} 条子件到表格！`)
+          }).catch(error => {
+            this.$message.error('获取默认仓库失败：' + error.message)
+          })
+        } catch (error) {
+          this.$message.error('数据处理失败：' + error.message)
+        }
+      },
+      // 获取默认仓库ID
+      getDefaultDepotId() {
+        return new Promise((resolve, reject) => {
+          const { getAction } = require('@/api/manage')
+          getAction('/depot/findDepotByCurrentUser').then((res) => {
+            if (res && res.code === 200) {
+              const depotList = res.data
+              if (depotList.length === 1) {
+                resolve(depotList[0].id)
+              } else {
+                const defaultDepot = depotList.find(depot => depot.isDefault)
+                resolve(defaultDepot ? defaultDepot.id : (depotList[0] ? depotList[0].id : ''))
+              }
+            } else {
+              reject(new Error('获取仓库列表失败'))
+            }
+          }).catch(error => {
+            reject(error)
+          })
+        })
+      },
+      // 根据仓库ID获取仓库名称
+      getDepotNameById(depotId) {
+        if (!this.depotList || !depotId) return ''
+        const depot = this.depotList.find(item => item.id === depotId)
+        return depot ? depot.depotName : ''
       }
     }
   }
