@@ -19,16 +19,7 @@
           </j-date>
         </a-form-item>
         <a-form-item label="上传附件" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <a-upload
-            :action="uploadUrl"
-            :file-list="fileList"
-            :multiple="true"
-            @change="handleUploadChange"
-            :beforeUpload="beforeUpload">
-            <a-button>
-              <a-icon type="upload" /> 选择文件
-            </a-button>
-          </a-upload>
+          <j-upload v-model="fileList" bizPath="dealer"></j-upload>
           <div style="color: #999; margin-top: 8px;">支持多文件上传，可上传完工照片、质检单等</div>
         </a-form-item>
       </a-form>
@@ -39,11 +30,13 @@
 <script>
   import { httpAction } from "@/api/manage"
   import JDate from "@/components/jeecg/JDate"
+  import JUpload from "@/components/jeecg/JUpload"
 
   export default {
     name: "AssembleModal",
     components: {
-      JDate
+      JDate,
+      JUpload
     },
     data() {
       return {
@@ -51,8 +44,7 @@
         confirmLoading: false,
         form: this.$form.createForm(this),
         ids: [],
-        fileList: [],
-        attachments: [],
+        fileList: '',
         labelCol: {
           xs: { span: 24 },
           sm: { span: 6 }
@@ -65,56 +57,17 @@
           actualFinishTime: { rules: [{ required: true, message: "请选择完工时间!" }] }
         },
         url: {
-          assemble: "/order/assemble",
-          upload: "/orderAttachment/upload"
+          assemble: "/order/assemble"
         }
       }
     },
-    computed: {
-      uploadUrl() {
-        return window._CONFIG['domianURL'] + this.url.upload
-      }
-    },
+    computed: {},
     methods: {
       show(ids) {
         this.ids = ids
         this.form.resetFields()
-        this.fileList = []
-        this.attachments = []
+        this.fileList = ''
         this.visible = true
-      },
-      beforeUpload(file) {
-        const isLt10M = file.size / 1024 / 1024 < 10
-        if (!isLt10M) {
-          this.$message.error('文件大小不能超过10MB!')
-          return false
-        }
-        return true
-      },
-      handleUploadChange(info) {
-        let fileList = [...info.fileList]
-        this.fileList = fileList
-        
-        // 处理上传成功的文件
-        if (info.file.status === 'done') {
-          const response = info.file.response
-          if (response.code === 200 && response.data) {
-            this.attachments.push({
-              url: response.data.url || response.data,
-              name: info.file.name
-            })
-            this.$message.success(`${info.file.name} 上传成功`)
-          } else {
-            this.$message.error(`${info.file.name} 上传失败`)
-          }
-        } else if (info.file.status === 'error') {
-          this.$message.error(`${info.file.name} 上传失败`)
-        }
-        
-        // 移除文件时同步删除attachments
-        if (info.file.status === 'removed') {
-          this.attachments = this.attachments.filter(att => att.name !== info.file.name)
-        }
       },
       handleOk() {
         const that = this
@@ -124,7 +77,7 @@
             let payload = {
               ids: this.ids.join(","),
               actualFinishTime: values.actualFinishTime,
-              attachments: this.attachments
+              fileName: this.fileList
             }
             httpAction(this.url.assemble, payload, "post").then((res) => {
               if (res.code === 200) {
