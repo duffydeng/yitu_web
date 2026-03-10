@@ -361,6 +361,18 @@
       }
     },
     methods: {
+      // 重写searchQuery方法，确保categoryIds格式正确
+      searchQuery() {
+        // 如果categoryIds是数组，转换为逗号分隔的字符串
+        let categoryIds = this.queryParam.categoryIds
+        if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+          this.queryParam.categoryIds = categoryIds.join(',')
+        } else if (Array.isArray(categoryIds) && categoryIds.length === 0) {
+          this.queryParam.categoryIds = undefined
+        }
+        // 调用父类的searchQuery方法
+        this.loadData(1)
+      },
       //加载初始化列
       initColumnsSetting(){
         let columnsStr = Vue.ls.get('materialColumns')
@@ -427,21 +439,25 @@
       onCategoryExpand(expandedKeys) {
         this.categoryExpandedKeys = expandedKeys;
       },
-      // 顶部类别树选择器 change 事件，将对象数组转为逗号字符串
+      // 顶部类别树选择器 change 事件，将对象数组转为ID数组并同步到左侧树
       onTopCategoryChange(values) {
-        if (!values || values.length === 0) {
-          this.queryParam.categoryIds = undefined
-        } else {
-          let ids = values.map(item => (typeof item === 'object' ? item.value : item))
-          this.queryParam.categoryIds = ids.join(',')
+        // 将选中的值转换为ID数组
+        let idArray = []
+        if (values && values.length > 0) {
+          idArray = values.map(item => (typeof item === 'object' ? item.value : item))
         }
+        // 同步到查询参数
+        this.queryParam.categoryIds = idArray
+        // 同步到左侧类别树的选中状态
+        this.categoryCheckedKeys = idArray
       },
       // 类别树勾选事件（多选）
       onCategoryTreeCheck(checkedKeys) {
         // checkedKeys 可能是数组（checkStrictly=false）或 {checked,halfChecked}（checkStrictly=true）
         let keys = Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked
         this.categoryCheckedKeys = keys
-        this.queryParam.categoryIds = keys.length > 0 ? keys.join(',') : undefined
+        // 将选中的ID转换为数组格式，同步到查询条件的类别选择器
+        this.queryParam.categoryIds = keys.length > 0 ? keys : []
         this.searchQuery()
       },
       // 切换类别树折叠状态
