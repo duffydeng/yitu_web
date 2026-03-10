@@ -282,20 +282,35 @@
       // 拆解条码：取表格第一行的条码，调 getBomList 接口，将子件列表填充到表格
       handleExpandBom() {
         let that = this
+        const tableRef = this.$refs[this.refKeys[0]]
+        // 获取当前选中的行ID列表
+        const selectedRowIds = tableRef.selectedRowIds || []
         this.$refs[this.refKeys[0]].getValues((error, values) => {
           if (error) return
-          // 找第一行有条码的组合件条码
-          let mainBarCode = ''
-          for (let i = 0; i < values.length; i++) {
-            if (values[i].barCode) {
-              mainBarCode = values[i].barCode
-              break
+          // 优先使用选中行中第一个有条码的行，否则退化为第一行有条码的行
+          let targetIndex = -1
+          if (selectedRowIds.length > 0) {
+            for (let i = 0; i < values.length; i++) {
+              if (selectedRowIds.indexOf(values[i].id) !== -1 && values[i].barCode) {
+                targetIndex = i
+                break
+              }
             }
           }
-          if (!mainBarCode) {
-            that.$message.warning('请先在表格中填入组合件条码！')
+          if (targetIndex === -1) {
+            // 没有选中行或选中行无条码，取第一行有条码的行
+            for (let i = 0; i < values.length; i++) {
+              if (values[i].barCode) {
+                targetIndex = i
+                break
+              }
+            }
+          }
+          if (targetIndex === -1) {
+            that.$message.warning('请先勾选要拆解的行（或在表格中填入组合件条码）！')
             return
           }
+          const mainBarCode = values[targetIndex].barCode
           that.bomLoading = true
           getBomList({ barCode: mainBarCode }).then((res) => {
             if (res && res.code === 200) {
@@ -320,28 +335,24 @@
                     }
                   }
                 }
-                // 构造新数据行：第一行为组合件（保留原第一行），后续为子件
-                let newRows = []
-                // 保留组合件行（第一行）
-                if (values.length > 0 && values[0].barCode) {
-                  let mainRow = Object.assign({}, values[0])
-                  let hasBom = mainRow.hasBom
-                  mainRow.mType = (hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件'
-                  mainRow.spcPrice = mainRow.spcPrice ? mainRow.spcPrice-0 : 0
-                  mainRow.operNumber = mainRow.operNumber ? mainRow.operNumber-0 : 0
-                  mainRow.unitPrice = mainRow.unitPrice ? mainRow.unitPrice-0 : 0
-                  mainRow.allPrice = (mainRow.operNumber*mainRow.unitPrice + mainRow.spcPrice).toFixed(2)-0
-                  newRows.push(mainRow)
-                }
-                // 追加子件行
-                for (let i = 0; i < bomData.length; i++) {
-                  let item = bomData[i]
+                const targetRow = values[targetIndex]
+                const depotId = defaultDepotId || targetRow.depotId || ''
+                // 目标行（组合件）保留并格式化
+                let mainRow = Object.assign({}, targetRow)
+                let hasBom = mainRow.hasBom
+                mainRow.mType = (hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件'
+                mainRow.spcPrice = mainRow.spcPrice ? mainRow.spcPrice-0 : 0
+                mainRow.operNumber = mainRow.operNumber ? mainRow.operNumber-0 : 0
+                mainRow.unitPrice = mainRow.unitPrice ? mainRow.unitPrice-0 : 0
+                mainRow.allPrice = (mainRow.operNumber*mainRow.unitPrice + mainRow.spcPrice).toFixed(2)-0
+                // BOM 子件行
+                let bomRows = bomData.map(item => {
                   let operNumber = item.operNumber || item.num || 1
                   let unitPrice = item.unitPrice || item.billPrice || item.purchaseDecimal || 0
                   let spcPrice = item.spcPrice || 0
-                  newRows.push({
+                  return {
                     mType: (item.hasBom == 1 || item.hasBom == '1') ? '组装件' : '普通子件',
-                    depotId: defaultDepotId || (values[0] && values[0].depotId) || '',
+                    depotId: depotId,
                     barCode: item.mBarCode || item.barCode || '',
                     name: item.name || '',
                     standard: item.standard || '',
@@ -361,9 +372,12 @@
                     spcPrice: spcPrice,
                     allPrice: (operNumber*unitPrice + spcPrice).toFixed(2)-0,
                     remark: item.remark || ''
-                  })
-                }
-                that.materialTable.dataSource = newRows
+                  }
+                })
+                // 拼接：目标行之前的行 + 目标行 + BOM子件 + 目标行之后的其余行
+                const rowsBefore = values.slice(0, targetIndex)
+                const rowsAfter = values.slice(targetIndex + 1)
+                that.materialTable.dataSource = [...rowsBefore, mainRow, ...bomRows, ...rowsAfter]
                 that.$message.success('拆解成功，共填入 ' + bomData.length + ' 条子件！')
               })
             } else {
