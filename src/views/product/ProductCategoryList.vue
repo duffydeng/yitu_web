@@ -171,10 +171,10 @@
           return
         }
         let record = (this.selectionRows && this.selectionRows[0]) || {}
-        if (record.productType && record.productType !== '分类') {
-          this.$message.warning('请选择产品类型为“分类”的记录！')
-          return
-        }
+        // if (record.productType && record.productType !== '分类') {
+        //   this.$message.warning('请选择产品类型为“分类”的记录！')
+        //   return
+        // }
         this.currentProductId = this.selectedRowKeys[0]
         if (this.$refs.selectMaterialModal && typeof this.$refs.selectMaterialModal.showModal === 'function') {
           this.$refs.selectMaterialModal.showModal()

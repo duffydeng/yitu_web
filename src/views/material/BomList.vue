@@ -175,6 +175,7 @@
     </div>
     <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
     <j-select-material-modal ref="copyMaterialModal" :multi="false" @ok="selectCopyMaterialOK" />
+    <j-select-material-modal ref="replaceItemModal" :multi="false" @ok="selectReplaceMaterialOK" />
     <import-file-modal ref="bomImportModal" @ok="bomImportOk"></import-file-modal>
     <!-- 版本选择模态框 -->
     <a-modal
@@ -721,35 +722,32 @@
           this.bomLoading = false
         })
       },
-      // 点击条码输入框旁的搜索按钮，打开物料弹窗替换当前行
+      // 点击条码输入框旁的搜索按钮，打开物料弹窗替换当前行（使用单选弹窗）
       handleBarCodeSearch(record) {
         this.replacingRecord = record
-        this.$refs.selectMaterialModal.showModal()
+        this.$refs.replaceItemModal.showModal()
+      },
+      // 替换弹窗确认回调
+      selectReplaceMaterialOK(rows) {
+        const record = this.replacingRecord
+        this.replacingRecord = null
+        if (!rows || rows.length === 0 || !record) return
+        const row = rows[0]
+        const index = this.bomDataSource.findIndex(item => item.id === record.id)
+        if (index !== -1) {
+          const existing = this.bomDataSource[index]
+          this.$set(this.bomDataSource, index, {
+            ...existing,
+            materialId: row.id,
+            barCode: row.mBarCode,
+            materialName: row.name,
+            purchaseDecimal: row.purchaseDecimal || 0,
+            totalPrice: ((existing.qty || 1) * (row.purchaseDecimal || 0)).toFixed(2)
+          })
+          this.$message.success('已替换商品信息')
+        }
       },
       selectMaterialOK(rows, ids) {
-        // 行内替换模式：点击条码搜索按钮触发
-        if (this.replacingRecord) {
-          const record = this.replacingRecord
-          this.replacingRecord = null
-          if (!rows || rows.length === 0) return
-          const row = rows[0] // 只取第一条
-          const index = this.bomDataSource.findIndex(item => item.id === record.id)
-          if (index !== -1) {
-            const existing = this.bomDataSource[index]
-            this.$set(this.bomDataSource, index, {
-              ...existing,
-              // 只更新条码、物料名称、采购单价，其余字段（id、productName等）保持不变
-              materialId: row.id,
-              barCode: row.mBarCode,
-              materialName: row.name,
-              productName: row.name,
-              purchaseDecimal: row.purchaseDecimal || 0,
-              totalPrice: ((existing.qty || 1) * (row.purchaseDecimal || 0)).toFixed(2)
-            })
-          }
-          this.$message.success('已替换商品信息')
-          return
-        }
         // 由于弹窗已设置为多选模式(:multi="true")，先弹出版本选择框
         if (rows && Array.isArray(rows) && rows.length > 0) {
           if (!this.selectedMaterial.id) {
@@ -835,19 +833,19 @@
         }
         // 提取所有必要字段进行批量传入
         let rows = this.bomDataSource.map(item => ({
-          id: item.id, // 使用接口返回的ID或已存在的ID
-          bomId: this.selectedMaterial.id, // 当前操作的bomId
-          productName: item.productName, // 商品名称，来自queryByBarCode接口返回
-          materialName: item.materialName, // 物料名称，来自queryByBarCode接口返回
-          materialId: item.materialId, // 物料ID
-          barCode: item.barCode, // 条码
-          qty: item.qty || 1, // 数量
-          purchaseDecimal: item.purchaseDecimal || 0, // 采购单价
-          wholesaleDecimal: item.wholesaleDecimal || 0, // 销售单价
-          cost: ((item.qty || 1) * (item.purchaseDecimal || 0)).toFixed(2), // 计算成本：数量 × 采购单价
-          totalPrice: item.totalPrice || 0, // 总价
-          version: item.version || '1.0', // 版本号
-          remark: item.remark || '' // 备注
+          id: item.id,
+          bomId: this.selectedMaterial.id,
+          productName: item.productName,
+          materialName: item.materialName,
+          materialId: item.materialId,
+          barCode: item.barCode,
+          qty: item.qty || 1,
+          purchaseDecimal: item.purchaseDecimal || 0,
+          wholesaleDecimal: item.wholesaleDecimal || 0,
+          cost: ((item.qty || 1) * (item.purchaseDecimal || 0)).toFixed(2),
+          totalPrice: item.totalPrice || 0,
+          version: item.version || '1.0',
+          remark: item.remark || ''
         }))
         let params = {
           rows: JSON.stringify(rows)

@@ -246,6 +246,13 @@
           this.initBarCode()
         }
       },
+      visible(val) {
+        if (val) {
+          document.addEventListener('keydown', this._handleEnter)
+        } else {
+          document.removeEventListener('keydown', this._handleEnter)
+        }
+      }
     },
     created() {
       // 该方法触发屏幕自适应
@@ -253,6 +260,11 @@
       this.handleChangeOtherField()
     },
     methods: {
+      _handleEnter(e) {
+        if (e.key === 'Enter' && this.selectedRowKeys.length > 0 && !this.loading) {
+          this.handleSubmit()
+        }
+      },
       initBarCode() {
         if (this.barCode) {
           this.$emit('initComp', this.barCode)

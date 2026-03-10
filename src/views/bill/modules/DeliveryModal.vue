@@ -76,7 +76,21 @@ export default {
       }
     }
   },
+  watch: {
+    visible(val) {
+      if (val) {
+        document.addEventListener('keydown', this._handleEnter)
+      } else {
+        document.removeEventListener('keydown', this._handleEnter)
+      }
+    }
+  },
   methods: {
+    _handleEnter(e) {
+      if (e.key === 'Enter' && !this.confirmLoading) {
+        this.handleOk()
+      }
+    },
     show(orderIds) {
       this.visible = true
       this.orderIds = orderIds || []

@@ -10,7 +10,7 @@
       <div v-if="!categoryTreeCollapsed" class="category-tree-content">
         <a-tree
           checkable
-          :treeData="categoryTreeForSelect"
+          :treeData="categoryTree"
           :expandedKeys="categoryExpandedKeys"
           @expand="onCategoryExpand"
           @check="onCategoryTreeCheck"
@@ -394,19 +394,20 @@
           if(res){
             that.categoryTree = [];
             that.categoryTreeForSelect = [];
-            // 处理类别树，只显示两级
+            // 处理类别树，左侧树显示全部级别
             for (let i = 0; i < res.length; i++) {
               let temp = JSON.parse(JSON.stringify(res[i])); // 深拷贝
               that.categoryTree.push(temp);
               // 处理用于选择的树，只保留两级
-              let formattedNode = that.formatCategoryTreeNode(temp, 1);
+              let formattedNode = that.formatCategoryTreeNodeForSelect(temp, 1);
               that.categoryTreeForSelect.push(formattedNode);
             }
           }
         })
       },
-      // 格式化类别树节点，只显示两级
-      formatCategoryTreeNode(node, level) {
+      // 格式化类别树节点，用于选择器时只显示两级
+      // 格式化类别树节点，用于选择器时只显示两级
+      formatCategoryTreeNodeForSelect(node, level) {
         if (!node) return null;
         let formatted = {
           key: node.key || node.id,
@@ -414,9 +415,9 @@
           value: node.value || node.id,
           scopedSlots: { title: 'custom' }
         };
-        // 只保留两级
+        // 选择器只保留两级
         if (level === 1 && node.children && node.children.length > 0) {
-          formatted.children = node.children.map(child => this.formatCategoryTreeNode(child, 2));
+          formatted.children = node.children.map(child => this.formatCategoryTreeNodeForSelect(child, 2));
         } else {
           formatted.children = undefined;
         }

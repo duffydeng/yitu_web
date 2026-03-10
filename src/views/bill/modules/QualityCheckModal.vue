@@ -34,16 +34,7 @@
           </j-date>
         </a-form-item>
         <a-form-item label="上传附件" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <a-upload
-            :action="uploadUrl"
-            :file-list="fileList"
-            :multiple="true"
-            @change="handleUploadChange"
-            :beforeUpload="beforeUpload">
-            <a-button>
-              <a-icon type="upload" /> 选择文件
-            </a-button>
-          </a-upload>
+          <j-upload v-model="fileList" bizPath="dealer"></j-upload>
           <div style="color: #999; margin-top: 8px;">支持多文件上传，可上传质检报告、检测照片等</div>
         </a-form-item>
       </a-form>
@@ -54,11 +45,13 @@
 <script>
   import { httpAction, getAction } from "@/api/manage"
   import JDate from "@/components/jeecg/JDate"
+  import JUpload from "@/components/jeecg/JUpload"
 
   export default {
     name: "QualityCheckModal",
     components: {
-      JDate
+      JDate,
+      JUpload
     },
     data() {
       return {
@@ -66,8 +59,7 @@
         confirmLoading: false,
         form: this.$form.createForm(this),
         ids: [],
-        fileList: [],
-        attachments: [],
+        fileList: '',
         userList: [],
         userPage: 1,
         userPageSize: 20,
@@ -88,22 +80,30 @@
         },
         url: {
           check: "/order/check",
-          upload: "/orderAttachment/upload",
           userList: "/user/listAll"
         }
       }
     },
-    computed: {
-      uploadUrl() {
-        return window._CONFIG['domianURL'] + this.url.upload
+    computed: {},
+    watch: {
+      visible(val) {
+        if (val) {
+          document.addEventListener('keydown', this._handleEnter)
+        } else {
+          document.removeEventListener('keydown', this._handleEnter)
+        }
       }
     },
     methods: {
+      _handleEnter(e) {
+        if (e.key === 'Enter' && !this.confirmLoading) {
+          this.handleOk()
+        }
+      },
       show(ids) {
         this.ids = ids
         this.form.resetFields()
-        this.fileList = []
-        this.attachments = []
+        this.fileList = ''
         this.userList = []
         this.userPage = 1
         this.userSearchValue = ''
@@ -162,31 +162,6 @@
         }
         return true
       },
-      handleUploadChange(info) {
-        let fileList = [...info.fileList]
-        this.fileList = fileList
-        
-        // 处理上传成功的文件
-        if (info.file.status === 'done') {
-          const response = info.file.response
-          if (response.code === 200 && response.data) {
-            this.attachments.push({
-              url: response.data.url || response.data,
-              name: info.file.name
-            })
-            this.$message.success(`${info.file.name} 上传成功`)
-          } else {
-            this.$message.error(`${info.file.name} 上传失败`)
-          }
-        } else if (info.file.status === 'error') {
-          this.$message.error(`${info.file.name} 上传失败`)
-        }
-        
-        // 移除文件时同步删除attachments
-        if (info.file.status === 'removed') {
-          this.attachments = this.attachments.filter(att => att.name !== info.file.name)
-        }
-      },
       handleOk() {
         const that = this
         this.form.validateFields((err, values) => {
@@ -196,7 +171,7 @@
               ids: this.ids.join(","),
               qualityInspector: values.qualityInspector,
               qualityInspectionTime: values.qualityInspectionTime,
-              attachments: this.attachments
+              fileName: this.fileList
             }
             httpAction(this.url.check, payload, "post").then((res) => {
               if (res.code === 200) {
