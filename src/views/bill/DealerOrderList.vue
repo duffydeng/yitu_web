@@ -76,6 +76,7 @@
           <a-button @click="handleDelivery" type="primary" icon="car">发货</a-button>
           <a-button @click="handleDeductStock" type="primary" icon="minus-circle">扣减库存</a-button>
           <a-button v-if="isShowExcel && btnEnableList.indexOf(3)>-1" icon="download" @click="handleExport">导出</a-button>
+          <a-button icon="file-excel" @click="downloadCustomOrder">下载定制单</a-button>
           <a-popover trigger="click" placement="right">
             <template slot="content">
               <a-checkbox-group @change="onColChange" v-model="settingDataIndex" :defaultValue="settingDataIndex">
@@ -475,6 +476,51 @@
           record.childrens = []
         }).finally(() => {
           record.loading = false
+        })
+      },
+      // 下载定制单
+      downloadCustomOrder() {
+        // 检查是否选中了一条数据
+        if (!this.selectedRowKeys || this.selectedRowKeys.length === 0) {
+          this.$message.warning('请选择一条数据')
+          return
+        }
+        if (this.selectedRowKeys.length > 1) {
+          this.$message.warning('只能选择一条数据下载定制单')
+          return
+        }
+
+        // 导入downFile函数
+        const { downFile } = require('@/api/manage')
+
+        // 传入id参数
+        let param = {
+          id: this.selectedRowKeys[0]
+        }
+
+        console.log("下载定制单参数", param)
+
+        // 调用下载接口
+        downFile('/order/downloadCustomOrder', param).then((data) => {
+          if (!data) {
+            this.$message.warning("文件下载失败")
+            return
+          }
+          if (typeof window.navigator.msSaveBlob !== 'undefined') {
+            window.navigator.msSaveBlob(new Blob([data], {type: 'application/vnd.ms-excel'}), '定制单.xls')
+          } else {
+            let url = window.URL.createObjectURL(new Blob([data], {type: 'application/vnd.ms-excel'}))
+            let link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = url
+            link.setAttribute('download', '定制单_' + new Date().getTime() + '.xls')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+          }
+        }).catch(() => {
+          this.$message.error("下载失败")
         })
       }
     }
