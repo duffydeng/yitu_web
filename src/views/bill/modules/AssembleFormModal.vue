@@ -340,7 +340,7 @@
                 // 目标行（组合件）保留并格式化
                 let mainRow = Object.assign({}, targetRow)
                 let hasBom = mainRow.hasBom
-                mainRow.mType = (hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件'
+                // mainRow.mType = (hasBom == 1 || hasBom == '1') ? '组装件' : '普通子件'
                 mainRow.spcPrice = mainRow.spcPrice ? mainRow.spcPrice-0 : 0
                 mainRow.operNumber = mainRow.operNumber ? mainRow.operNumber-0 : 0
                 mainRow.unitPrice = mainRow.unitPrice ? mainRow.unitPrice-0 : 0
