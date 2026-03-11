@@ -20,6 +20,22 @@
               </a-col>
             </a-row>
             <a-row :gutter="24">
+              <a-col :md="12" :sm="24">
+                <a-form-item label="类别">
+                  <a-tree-select
+                    style="width: 100%"
+                    :dropdownStyle="{maxHeight:'200px',overflow:'auto'}"
+                    allow-clear
+                    treeCheckable
+                    :showCheckedStrategy="'SHOW_PARENT'"
+                    :treeData="categoryTree"
+                    v-model="queryParam.categoryIds"
+                    placeholder="请选择类别（可多选）"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="24">
               <a-col :md="24" :sm="24">
                 <span class="table-page-search-submitButtons" style="float: right; margin-bottom: 10px;">
                   <a-button type="primary" @click="searchQuery">查询</a-button>
@@ -44,7 +60,7 @@
           :pagination="ipagination"
           :scroll="scroll"
           :loading="loading"
-          :row-selection="{selectedRowKeys: selectedRowKeys, type: 'radio', onChange: onSelectChange}"
+          :row-selection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
           @change="handleTableChange"
           :customRow="customRow"
           :components="handleDrag(columns)"
@@ -302,6 +318,7 @@
   import JEllipsis from '@/components/jeecg/JEllipsis'
   import ImportFileModal from '@/components/tools/ImportFileModal'
   import { getAction, postAction, downFile, deleteAction } from '@/api/manage'
+  import { queryMaterialCategoryTreeList } from '@/api/api'
 
   export default {
     name: "BomList",
@@ -328,9 +345,11 @@
         queryParam: {
           materialParam: '',
           hasBom: undefined,
+          categoryIds: undefined,
           // mpList: getMpListShort(Vue.ls.get('materialPropertyList')),
           mpList: []
         },
+        categoryTree: [],
         urlPath: '/material/bom',
         url: {
           list: "/material/list",
@@ -442,6 +461,7 @@
       this.initColumnsSetting()
       this.initBomColumnsSetting()
       this.bomDetailForm = this.$form.createForm(this)
+      this.loadCategoryTree()
     },
     mounted() {
       this.initBomScroll()
@@ -520,7 +540,7 @@
         this.selectedRowKeys = selectedRowKeys;
         this.selectionRows = selectedRows;
         if (selectedRows.length > 0) {
-          this.handleRowClick(selectedRows[0])
+          this.handleRowClick(selectedRows[selectedRows.length - 1])
         }
       },
       customRow(record) {
@@ -536,8 +556,7 @@
         }
       },
       handleRowClick(record) {
-        this.selectedRowKeys = [record.id]
-        this.selectionRows = [record]
+        this.selectedRowKeys = this.selectionRows.map(row => row.id)
         this.selectedMaterial = record
         this.bomQueryVersion = undefined // 重置版本查询条件
         this.loadBomVersionList()
@@ -1055,7 +1074,19 @@
         this.queryParam = {
           materialParam: '',
           hasBom: undefined,
+          categoryIds: undefined,
           mpList: getMpListShort(Vue.ls.get('materialPropertyList'))
+        }
+        this.loadData(1);
+      },
+      // 重写searchQuery方法,确保categoryIds格式正确
+      searchQuery() {
+        // 如果categoryIds是数组,转换为逗号分隔的字符串
+        let categoryIds = this.queryParam.categoryIds
+        if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+          this.queryParam.categoryIds = categoryIds.join(',')
+        } else if (Array.isArray(categoryIds) && categoryIds.length === 0) {
+          this.queryParam.categoryIds = undefined
         }
         this.loadData(1);
       },
@@ -1144,6 +1175,21 @@
         document.addEventListener('mouseup', this.handleDragMoveEnd)
         e.preventDefault()
         e.stopPropagation()
+      },
+      // 加载类别树数据
+      loadCategoryTree() {
+        let that = this;
+        let params = {};
+        params.id = '';
+        queryMaterialCategoryTreeList(params).then((res) => {
+          if (res) {
+            that.categoryTree = [];
+            for (let i = 0; i < res.length; i++) {
+              let temp = JSON.parse(JSON.stringify(res[i]));
+              that.categoryTree.push(temp);
+            }
+          }
+        })
       }
     },
     beforeDestroy() {

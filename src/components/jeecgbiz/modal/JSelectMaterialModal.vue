@@ -19,7 +19,8 @@
               <a-col :md="6" :sm="24">
                 <a-form-item label="类别" :labelCol="labelCol" :wrapperCol="wrapperCol">
                   <a-tree-select style="width:100%" :dropdownStyle="{maxHeight:'200px',overflow:'auto'}" allow-clear
-                   :treeData="categoryTree" v-model="queryParam.categoryId" placeholder="请选择类别">
+                   treeCheckable :showCheckedStrategy="'SHOW_PARENT'"
+                   :treeData="categoryTree" v-model="queryParam.categoryIds" placeholder="请选择类别">
                   </a-tree-select>
                 </a-form-item>
               </a-col>
@@ -166,7 +167,7 @@
           mp3: '扩展3'
         },
         queryParam: {
-          categoryId: undefined,
+          categoryIds: undefined,
           materialParam:'',
           standard:'',
           model:'',
@@ -277,6 +278,13 @@
         if (arg === 1) {
           this.ipagination.current = 1;
         }
+        // 如果categoryIds是数组,转换为逗号分隔的字符串
+        let categoryIds = this.queryParam.categoryIds
+        if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+          this.queryParam.categoryIds = categoryIds.join(',')
+        } else if (Array.isArray(categoryIds) && categoryIds.length === 0) {
+          this.queryParam.categoryIds = undefined
+        }
         this.loading = true
         // 使用 JeecgListMixin 的 getQueryParams 方法，与左侧列表保持一致
         let params = this.getQueryParams()//查询条件
@@ -366,7 +374,7 @@
         let that = this;
         if (num !== 0) {
           that.queryParam = {
-            categoryId: undefined,
+            categoryIds: undefined,
             materialParam:'',
             standard:'',
             model:'',
