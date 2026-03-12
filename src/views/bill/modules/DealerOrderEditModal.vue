@@ -345,10 +345,11 @@ export default {
       this.materialLoading = true
       const params = {
         pageNo: this.materialPagination.current,
-        pageSize: this.materialPagination.pageSize
+        pageSize: this.materialPagination.pageSize,
+        search: {}
       }
       if (this.materialSearchKey) {
-        params.materialParam = this.materialSearchKey
+        params.search.materialParam = this.materialSearchKey
       }
       getAction(this.url.materialList, params).then(res => {
         if (res.code === 200) {

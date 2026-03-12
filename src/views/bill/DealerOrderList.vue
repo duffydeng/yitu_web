@@ -165,9 +165,9 @@
           cancelText="取消">
           <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
             <a-form-item label="仓库">
-              <a-select 
-                v-model="selectedDepotId" 
-                placeholder="请选择仓库" 
+              <a-select
+                v-model="selectedDepotId"
+                placeholder="请选择仓库"
                 allow-clear
                 showSearch
                 optionFilterProp="children">
@@ -267,7 +267,7 @@
           { title: '产品名称', dataIndex: 'productName',width:200, ellipsis:true},
           { title: '订单总价', dataIndex: 'totalPrice',width:100},
           { title: '定金', dataIndex: 'deposit',width:100},
-          { title: '冲减库存', dataIndex: 'deductStock', width: 80, customRender: (text) => text ? '是' : '否' },
+          // { title: '冲减库存', dataIndex: 'deductStock', width: 80, customRender: (text) => text ? '是' : '否' },
           { title: '创建时间', dataIndex: 'createTime',width:150,
             customRender:function (text) {
               return !text?"":text.substring(0,10)
@@ -414,13 +414,13 @@
           this.$message.warning("请选择仓库！");
           return;
         }
-        
+
         this.deductStockLoading = true;
         const params = {
           ids: this.selectedRowKeys.join(','),
           depotId: this.selectedDepotId
         };
-        
+
         postAction(this.url.deductStock, params).then(res => {
           if (res.code === 200) {
             this.$message.success(res.data.message || '扣减库存成功');
