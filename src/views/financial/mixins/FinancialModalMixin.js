@@ -70,7 +70,7 @@ export const FinancialModalMixin = {
       }
     },
     addInit(amountNum) {
-      getAction('/sequence/buildNumber').then((res) => {
+      getAction('/sequence/buildNumberByPrefix', { prefix: amountNum }).then((res) => {
         if (res && res.code === 200) {
           this.form.setFieldsValue({'billNo':amountNum + res.data.defaultNumber})
         }

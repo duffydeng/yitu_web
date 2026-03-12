@@ -95,7 +95,7 @@ export const BillModalMixin = {
       }
     },
     addInit(amountNum) {
-      getAction('/sequence/buildNumber').then((res) => {
+      getAction('/sequence/buildNumberByPrefix', { prefix: amountNum }).then((res) => {
         if (res && res.code === 200) {
           this.model.defaultNumber = amountNum + res.data.defaultNumber
           this.form.setFieldsValue({'number':amountNum + res.data.defaultNumber})
@@ -125,7 +125,7 @@ export const BillModalMixin = {
       this.manyAccountBtnStatus = false
     },
     copyAddInit(amountNum) {
-      getAction('/sequence/buildNumber').then((res) => {
+      getAction('/sequence/buildNumberByPrefix', { prefix: amountNum }).then((res) => {
         if (res && res.code === 200) {
           this.form.setFieldsValue({'number':amountNum + res.data.defaultNumber})
         }
