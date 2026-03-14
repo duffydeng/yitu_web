@@ -8,6 +8,10 @@
     @ok="handleOk"
     @cancel="handleCancel"
     cancelText="关闭">
+    <template slot="footer">
+      <a-button @click="handleCancel">关闭</a-button>
+      <a-button type="primary" :loading="confirmLoading" @click="handleOk">确定</a-button>
+    </template>
     <a-spin :spinning="confirmLoading">
       <a-form :form="form">
         <a-row :gutter="16">
@@ -99,6 +103,7 @@
           :columns="detailColumns"
           :dataSource="detailDataSource"
           :pagination="false"
+          :scroll="{ x: 1050, y: 400 }"
           bordered
           size="small"
           rowKey="id">
@@ -204,7 +209,7 @@
 </template>
 
 <script>
-import { getAction, putAction } from "@/api/manage"
+import { getAction, putAction, postAction, deleteAction } from "@/api/manage"
 import pick from "lodash.pick"
 import JDate from "@/components/jeecg/JDate"
 
@@ -227,6 +232,7 @@ export default {
         sm: { span: 16 }
       },
       confirmLoading: false,
+      saveMainLoading: false,
       form: this.$form.createForm(this),
       detailDataSource: [],
       editingKey: '',
@@ -288,7 +294,10 @@ export default {
         info: "/order/info",
         update: "/order/update",
         materialList: "/material/list",
-        bomList: "/bomList/list"
+        bomList: "/bomList/list",
+        detailAdd: "/orderDetail/add",
+        detailUpdate: "/orderDetail/update",
+        detailDelete: "/orderDetail/delete"
       }
     }
   },
@@ -298,8 +307,45 @@ export default {
       this.editingKey = record.id
     },
     save(record) {
-      this.editingKey = ''
-      delete record.isNew
+      const detail = {
+        orderId: this.model.id,
+        materialId: record.materialId,
+        materialName: record.materialName,
+        barCode: record.barCode,
+        version: record.version,
+        categoryId: record.categoryId,
+        categoryName: record.categoryName,
+        qty: record.qty,
+        detailPrice: record.detailPrice,
+        detailTotalPrice: record.detailTotalPrice
+      }
+      if (record.isNew) {
+        // 新增
+        postAction(this.url.detailAdd, detail).then(res => {
+          if (res.code === 200) {
+            this.$message.success('新增成功')
+            // 用服务器返回的真实id替换临时id
+            if (res.data && res.data.id) {
+              record.id = res.data.id
+            }
+            delete record.isNew
+            this.editingKey = ''
+          } else {
+            this.$message.warning(res.message || '新增失败')
+          }
+        })
+      } else {
+        // 编辑
+        detail.id = record.id
+        putAction(this.url.detailUpdate, detail).then(res => {
+          if (res.code === 200) {
+            this.$message.success('保存成功')
+            this.editingKey = ''
+          } else {
+            this.$message.warning(res.message || '保存失败')
+          }
+        })
+      }
     },
     cancel(record) {
       if (record.isNew) {
@@ -328,7 +374,20 @@ export default {
       this.editingKey = newData.id
     },
     deleteRow(index) {
-      this.detailDataSource.splice(index, 1)
+      const record = this.detailDataSource[index]
+      // 新增但未保存的行直接从列表移除
+      if (record.isNew || !record.id || record.id > 1000000000000) {
+        this.detailDataSource.splice(index, 1)
+        return
+      }
+      deleteAction(this.url.detailDelete, { id: record.id }).then(res => {
+        if (res.code === 200) {
+          this.$message.success('删除成功')
+          this.detailDataSource.splice(index, 1)
+        } else {
+          this.$message.warning(res.message || '删除失败')
+        }
+      })
     },
     calculateDetail(record) {
       const qty = parseFloat(record.qty) || 0
@@ -471,6 +530,27 @@ export default {
     },
     handleCancel() {
       this.close()
+    },
+    // 仅保存主表字段
+    handleSaveMain() {
+      this.form.validateFields((err, values) => {
+        if (!err) {
+          this.saveMainLoading = true
+          const formData = { ...this.model, ...values }
+          putAction(this.url.update, formData).then(res => {
+            if (res.code === 200) {
+              this.$message.success('保存成功')
+              this.$emit('ok')
+            } else {
+              this.$message.warning(res.data && res.data.msg || res.message || '保存失败')
+            }
+          }).catch(err => {
+            this.$message.error('保存失败：' + err.message)
+          }).finally(() => {
+            this.saveMainLoading = false
+          })
+        }
+      })
     },
     close() {
       this.visible = false
