@@ -279,19 +279,32 @@
       getBomRowClass(record) {
         return record && record.hasBom == 1 ? 'tr-has-bom' : ''
       },
+      // 获取选中行选中id
+      getSelectRowId(selectedRowIds,id){
+        let indexCode = false
+        for(let i = 0; i < selectedRowIds.length; i++){
+          if(selectedRowIds[i].indexOf(id) !== -1){
+            indexCode =  true
+            break
+          }
+        }
+        return indexCode
+      },
       // 拆解条码：取表格第一行的条码，调 getBomList 接口，将子件列表填充到表格
       handleExpandBom() {
         let that = this
         const tableRef = this.$refs[this.refKeys[0]]
+        console.log(tableRef,'----------tableRef')
         // 获取当前选中的行ID列表
         const selectedRowIds = tableRef.selectedRowIds || []
+        console.log(selectedRowIds,'---------------selectedRowIds---')
         this.$refs[this.refKeys[0]].getValues((error, values) => {
           if (error) return
           // 优先使用选中行中第一个有条码的行，否则退化为第一行有条码的行
           let targetIndex = -1
           if (selectedRowIds.length > 0) {
             for (let i = 0; i < values.length; i++) {
-              if (selectedRowIds.indexOf(values[i].id) !== -1 && values[i].barCode) {
+              if (this.getSelectRowId(selectedRowIds,values[i].id)  && values[i].barCode) {
                 targetIndex = i
                 break
               }
