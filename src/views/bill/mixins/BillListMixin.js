@@ -12,6 +12,8 @@ import pick from 'lodash.pick'
 export const BillListMixin = {
   data() {
     return {
+      /* 控制 BillDetail 组件挂载，避免页面初始化时立即挂载大组件 */
+      billDetailVisible: false,
       /* 原始审核是否开启 */
       checkFlag: true,
       /* 单据Excel是否开启 */
@@ -468,7 +470,7 @@ export const BillListMixin = {
       getAction(this.url.list, params).then((res) => {
         if (res.code === 200) {
           this.dataSource = res.data.rows
-          this.ipagination.total = res.data.total
+          this.ipagination.total = parseInt(res.data.total) || 0
           this.tableAddTotalRow(this.columns, this.dataSource)
         } else if (res.code === 510) {
           this.$message.warning(res.data)
@@ -528,6 +530,7 @@ export const BillListMixin = {
       }
     },
     myHandleDetail(record, type, prefixNo) {
+      this.billDetailVisible = true
       this.$nextTick(() => {
         if (this.$refs.modalDetail) {
           if (this.btnEnableList.indexOf(7) === -1) {
