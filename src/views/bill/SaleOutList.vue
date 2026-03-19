@@ -243,6 +243,7 @@
   import JEllipsis from '@/components/jeecg/JEllipsis'
   import JDate from '@/components/jeecg/JDate'
   import Vue from 'vue'
+  import {findBillDetailByNumber} from "@api/api";
   export default {
     name: "SaleOutList",
     mixins:[JeecgListMixin,BillListMixin],
@@ -365,6 +366,19 @@
       this.getDepotByCurrentUser()
     },
     methods: {
+      myHandleDetail(record) {
+        this.$refs.modalForm.action = "edit";
+        if (this.btnEnableList.indexOf(2) === -1) {
+          this.$refs.modalForm.isCanCheck = false
+        }
+        //查询单条单据信息
+        findBillDetailByNumber({ number: record.number }).then((res) => {
+          if (res && res.code === 200) {
+            let item = res.data
+            this.handleEdit(item)
+          }
+        })
+      }
     }
   }
 </script>

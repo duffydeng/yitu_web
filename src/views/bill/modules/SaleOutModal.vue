@@ -17,10 +17,10 @@
       <a-button @click="handleCancel">取消</a-button>
       <a-button v-if="billPrintFlag && isShowPrintBtn" @click="handlePrintPro('销售出库')">三联打印-新版</a-button>
       <a-button v-if="billPrintFlag && isShowPrintBtn" @click="handlePrint('销售出库')">三联打印</a-button>
-      <a-button v-if="checkFlag && isCanCheck" :loading="confirmLoading" @click="handleOkAndCheck">保存并审核</a-button>
-      <a-button type="primary" :loading="confirmLoading" @click="handleOk">保存（Ctrl+S）</a-button>
+
+      <a-button v-if="!isViewMode" type="primary" :loading="confirmLoading" @click="handleOk">保存（Ctrl+S）</a-button>
       <!--发起多级审核-->
-      <a-button v-if="!checkFlag" @click="handleWorkflow()" type="primary">提交流程</a-button>
+      <a-button v-if="!isViewMode && !checkFlag" @click="handleWorkflow()" type="primary">提交流程</a-button>
     </template>
     <a-spin :spinning="confirmLoading">
       <a-form :form="form">
@@ -273,6 +273,7 @@
         depositStatus: false,
         fileList:[],
         rowCanEdit: true,
+        isViewMode: false,
         model: {},
         labelCol: {
           xs: { span: 24 },
@@ -362,6 +363,15 @@
     created () {
     },
     methods: {
+      view(record) {
+        this.isViewMode = true
+        this.title = '查看'
+        this.edit(record)
+      },
+      handleCancel() {
+        this.isViewMode = false
+        this.close()
+      },
       //调用完edit()方法之后会自动调用此方法
       editAfter() {
         this.billStatus = '0'
@@ -421,6 +431,10 @@
           }
           let url = this.readOnly ? this.url.detailList : this.url.detailList;
           this.requestSubTableData(url, params, this.materialTable);
+          if (this.isViewMode) {
+            this.rowCanEdit = false
+            this.materialTable.columns[1].type = FormTypes.normal
+          }
         }
         //复制新增单据-初始化单号和日期
         if(this.action === 'copyAdd') {
