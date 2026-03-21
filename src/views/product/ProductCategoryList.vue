@@ -61,6 +61,16 @@
               <a-tag v-if="deleteFlag == 0 || deleteFlag == '0'" color="green">正常</a-tag>
               <a-tag v-else color="red">已删除</a-tag>
             </template>
+            <template slot="customPic" slot-scope="text, record">
+              <a-popover placement="right" trigger="click">
+                <template slot="content">
+                  <img :src="getImgUrl(record.imgUrl)" width="500px" />
+                </template>
+                <div v-if="record.imgUrl">
+                  <img :src="getImgUrl(record.imgUrl)" style="width:40px;height:40px;object-fit:cover;cursor:pointer;" title="查看大图" />
+                </div>
+              </a-popover>
+            </template>
           </a-table>
         </div>
 
@@ -97,7 +107,7 @@
 <script>
   import ProductCategoryModal from './modules/ProductCategoryModal'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
-  import { httpAction } from '@/api/manage'
+  import { httpAction, getFileAccessHttpUrl } from '@/api/manage'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
 
   export default {
@@ -135,11 +145,10 @@
             scopedSlots: { customRender: 'action' }
           },
           { title: '分类名称', dataIndex: 'name', width: 180, align: 'left' },
-          { title: '父级ID', dataIndex: 'parentId', width: 100, align: 'center' },
           { title: '父名称', dataIndex: 'parentName', width: 120, align: 'left' },
           { title: '产品类型', dataIndex: 'productType', width: 100, align: 'center' },
           { title: '价格', dataIndex: 'price', width: 100, align: 'right' },
-          { title: '图片', dataIndex: 'imgUrl', width: 200, align: 'left', ellipsis: true },
+          { title: '图片', dataIndex: 'imgUrl', width: 80, align: 'center', scopedSlots: { customRender: 'customPic' } },
           { title: '自定义1', dataIndex: 'otherField1', width: 120, align: 'left', ellipsis: true },
           { title: '自定义2', dataIndex: 'otherField2', width: 120, align: 'left', ellipsis: true },
           { title: '自定义3', dataIndex: 'otherField3', width: 120, align: 'left', ellipsis: true },
@@ -174,6 +183,12 @@
       }
     },
     methods: {
+      getImgUrl (imgUrl) {
+        if (imgUrl && imgUrl.split(',')[0]) {
+          return getFileAccessHttpUrl('systemConfig/static/' + imgUrl.split(',')[0])
+        }
+        return ''
+      },
       handleDeepCopy () {
         if (!this.selectedRowKeys || this.selectedRowKeys.length !== 1) {
           this.$message.warning('请选择一条产品记录！')
@@ -221,7 +236,7 @@
           this.detailModal.columns = [
             { title: '#', key: 'rowIndex', width: 60, align: 'center', customRender: (t, r, index) => parseInt(index) + 1 },
             { title: '名称', dataIndex: 'name', align: 'left' },
-            { title: '父级ID', dataIndex: 'parentId', width: 100, align: 'center' },
+
             { title: '产品类型', dataIndex: 'productType', width: 100, align: 'center' },
             { title: '状态', dataIndex: 'deleteFlag', width: 80, align: 'center', scopedSlots: { customRender: 'detailDeleteFlag' } }
           ]
