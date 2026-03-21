@@ -32,6 +32,7 @@
           <a-button @click="handleAdd" type="primary" icon="plus">新增</a-button>
           <a-button @click="batchDel" icon="delete">删除</a-button>
           <a-button @click="handleAddBarCodeDetail" icon="barcode">新增条码明细</a-button>
+          <a-button @click="handleDeepCopy" icon="copy" :loading="copyLoading">一键复制</a-button>
         </div>
 
         <div>
@@ -135,7 +136,14 @@
           },
           { title: '分类名称', dataIndex: 'name', width: 180, align: 'left' },
           { title: '父级ID', dataIndex: 'parentId', width: 100, align: 'center' },
+          { title: '父名称', dataIndex: 'parentName', width: 120, align: 'left' },
           { title: '产品类型', dataIndex: 'productType', width: 100, align: 'center' },
+          { title: '价格', dataIndex: 'price', width: 100, align: 'right' },
+          { title: '图片', dataIndex: 'imgUrl', width: 200, align: 'left', ellipsis: true },
+          { title: '自定义1', dataIndex: 'otherField1', width: 120, align: 'left', ellipsis: true },
+          { title: '自定义2', dataIndex: 'otherField2', width: 120, align: 'left', ellipsis: true },
+          { title: '自定义3', dataIndex: 'otherField3', width: 120, align: 'left', ellipsis: true },
+          { title: '自定义4', dataIndex: 'otherField4', width: 120, align: 'left', ellipsis: true },
           {
             title: '状态',
             dataIndex: 'deleteFlag',
@@ -150,6 +158,7 @@
           deleteBatch: '/product/deleteBatch'
         },
         currentProductId: '',
+        copyLoading: false,
         detailModal: {
           visible: false,
           title: '',
@@ -165,6 +174,24 @@
       }
     },
     methods: {
+      handleDeepCopy () {
+        if (!this.selectedRowKeys || this.selectedRowKeys.length !== 1) {
+          this.$message.warning('请选择一条产品记录！')
+          return
+        }
+        let parentId = this.selectedRowKeys[0]
+        this.copyLoading = true
+        httpAction('/product/deepCopyByParentId?parentId=' + parentId, {}, 'get').then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success((res.message || res.data && res.data.message) || '复制成功')
+            this.loadData()
+          } else {
+            this.$message.warning((res && res.message) || '复制失败')
+          }
+        }).finally(() => {
+          this.copyLoading = false
+        })
+      },
       handleAddBarCodeDetail () {
         if (!this.selectedRowKeys || this.selectedRowKeys.length !== 1) {
           this.$message.warning('请选择一条产品记录！')
