@@ -1,6 +1,26 @@
 <!--  --><template>
-  <a-row :gutter="24">
-    <a-col :md="24">
+  <div class="product-list-container">
+    <!-- 左侧类别树 -->
+    <div class="category-tree-panel" :class="{ 'collapsed': categoryTreeCollapsed }">
+      <div class="category-tree-header" @click="toggleCategoryTree">
+        <a-icon :type="categoryTreeCollapsed ? 'right' : 'left'" />
+        <span v-if="!categoryTreeCollapsed">类别</span>
+      </div>
+      <div v-if="!categoryTreeCollapsed" class="category-tree-content">
+        <a-tree
+          checkable
+          :treeData="categoryTree"
+          :expandedKeys="categoryExpandedKeys"
+          @expand="onCategoryExpand"
+          @check="onCategoryTreeCheck"
+          :checkedKeys="categoryCheckedKeys"
+          :defaultExpandAll="false"
+        >
+        </a-tree>
+      </div>
+    </div>
+    <!-- 右侧主内容区 -->
+    <div class="product-content-panel">
       <a-card :style="cardStyle" :bordered="false">
         <div class="table-page-search-wrapper">
           <a-form layout="inline" @keyup.enter.native="searchQuery">
@@ -100,14 +120,14 @@
           </a-table>
         </a-modal>
       </a-card>
-    </a-col>
-  </a-row>
+    </div>
+  </div>
 </template>
 
 <script>
   import ProductCategoryModal from './modules/ProductCategoryModal'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
-  import { httpAction, getFileAccessHttpUrl } from '@/api/manage'
+  import { httpAction, getAction, getFileAccessHttpUrl } from '@/api/manage'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
 
   export default {
@@ -123,7 +143,8 @@
         wrapperCol: { span: 18, offset: 1 },
         queryParam: {
           name: '',
-          productType: undefined
+          productType: undefined,
+          id: undefined
         },
         urlPath: '/product/category',
         columns: [
@@ -153,6 +174,7 @@
           { title: '自定义2', dataIndex: 'otherField2', width: 120, align: 'left', ellipsis: true },
           { title: '自定义3', dataIndex: 'otherField3', width: 120, align: 'left', ellipsis: true },
           { title: '自定义4', dataIndex: 'otherField4', width: 120, align: 'left', ellipsis: true },
+          { title: '排序', dataIndex: 'seqNum', width: 80, align: 'center' },
           {
             title: '状态',
             dataIndex: 'deleteFlag',
@@ -164,7 +186,8 @@
         url: {
           list: '/product/list',
           delete: '/product/delete',
-          deleteBatch: '/product/deleteBatch'
+          deleteBatch: '/product/deleteBatch',
+          productTree: '/product/getProductTree'
         },
         currentProductId: '',
         copyLoading: false,
@@ -179,15 +202,61 @@
           current: 1,
           productType: '',
           productId: ''
-        }
+        },
+        // 左侧类别树
+        categoryTree: [],
+        categoryTreeCollapsed: false,
+        categoryExpandedKeys: [],
+        categoryCheckedKeys: []
       }
     },
+    created () {
+      this.loadCategoryTree()
+    },
     methods: {
+      // 加载产品类别树（数据格式同 materialCategory/getMaterialCategoryTree）
+      loadCategoryTree () {
+        let that = this
+        getAction(this.url.productTree, { id: '' }).then(res => {
+          if (res) {
+            that.categoryTree = []
+            for (let i = 0; i < res.length; i++) {
+              let temp = JSON.parse(JSON.stringify(res[i]))
+              that.categoryTree.push(temp)
+            }
+          }
+        })
+      },
+      // 类别树展开/折叠
+      toggleCategoryTree () {
+        this.categoryTreeCollapsed = !this.categoryTreeCollapsed
+      },
+      // 类别树展开事件
+      onCategoryExpand (expandedKeys) {
+        this.categoryExpandedKeys = expandedKeys
+      },
+      // 类别树勾选事件（多选），勾选后自动查询
+      onCategoryTreeCheck (checkedKeys) {
+        let keys = Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked
+        this.categoryCheckedKeys = keys
+        if (keys && keys.length > 0) {
+          this.queryParam.id = keys.join(',')
+        } else {
+          this.queryParam.id = undefined
+        }
+        this.loadData(1)
+      },
       getImgUrl (imgUrl) {
         if (imgUrl && imgUrl.split(',')[0]) {
           return getFileAccessHttpUrl('systemConfig/static/' + imgUrl.split(',')[0])
         }
         return ''
+      },
+      // 重写 searchReset，同时清除树选中
+      searchReset () {
+        this.queryParam = { name: '', productType: undefined, id: undefined }
+        this.categoryCheckedKeys = []
+        this.loadData(1)
       },
       handleDeepCopy () {
         if (!this.selectedRowKeys || this.selectedRowKeys.length !== 1) {
@@ -212,11 +281,6 @@
           this.$message.warning('请选择一条产品记录！')
           return
         }
-        let record = (this.selectionRows && this.selectionRows[0]) || {}
-        // if (record.productType && record.productType !== '分类') {
-        //   this.$message.warning('请选择产品类型为“分类”的记录！')
-        //   return
-        // }
         this.currentProductId = this.selectedRowKeys[0]
         if (this.$refs.selectMaterialModal && typeof this.$refs.selectMaterialModal.showModal === 'function') {
           this.$refs.selectMaterialModal.showModal()
@@ -236,7 +300,6 @@
           this.detailModal.columns = [
             { title: '#', key: 'rowIndex', width: 60, align: 'center', customRender: (t, r, index) => parseInt(index) + 1 },
             { title: '名称', dataIndex: 'name', align: 'left' },
-
             { title: '产品类型', dataIndex: 'productType', width: 100, align: 'center' },
             { title: '状态', dataIndex: 'deleteFlag', width: 80, align: 'center', scopedSlots: { customRender: 'detailDeleteFlag' } }
           ]
@@ -304,5 +367,65 @@
 </script>
 
 <style scoped>
-  @import '~@assets/less/common.less'
+  @import '~@assets/less/common.less';
+
+  .product-list-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .category-tree-panel {
+    width: 220px;
+    min-width: 220px;
+    background: #fff;
+    border-right: 1px solid #e8e8e8;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .category-tree-panel.collapsed {
+    width: 40px;
+    min-width: 40px;
+  }
+
+  .category-tree-header {
+    height: 48px;
+    line-height: 48px;
+    padding: 0 12px;
+    border-bottom: 1px solid #e8e8e8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    background: #fafafa;
+  }
+
+  .category-tree-header:hover {
+    background: #f0f0f0;
+  }
+
+  .category-tree-header i {
+    font-size: 16px;
+    color: #666;
+  }
+
+  .category-tree-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .category-tree-panel.collapsed .category-tree-content {
+    display: none;
+  }
+
+  .product-content-panel {
+    flex: 1;
+    min-width: 0;
+    overflow: auto;
+  }
 </style>

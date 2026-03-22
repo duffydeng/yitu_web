@@ -60,6 +60,9 @@
           <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="自定义4">
             <a-input placeholder="请输入自定义4" v-decorator="[ 'otherField4' ]" />
           </a-form-item>
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="排序">
+            <a-input-number placeholder="请输入排序值" :min="0" :precision="0" style="width:100%" v-decorator="[ 'seqNum' ]" />
+          </a-form-item>
         </a-form>
       </a-spin>
     </a-modal>
@@ -115,7 +118,7 @@
         this.visible = true
         this.loadParentList()
         this.$nextTick(() => {
-          this.form.setFieldsValue(pick(this.model, 'name', 'parentId', 'productType', 'price', 'parentName', 'otherField1', 'otherField2', 'otherField3', 'otherField4'))
+          this.form.setFieldsValue(pick(this.model, 'name', 'parentId', 'productType', 'price', 'parentName', 'otherField1', 'otherField2', 'otherField3', 'otherField4', 'seqNum'))
         })
       },
       loadParentList () {
