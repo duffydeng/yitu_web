@@ -43,7 +43,7 @@
           :columns="materialTable.columns"
           :dataSource="materialTable.dataSource"
           :minWidth="minWidth"
-          :maxHeight="300"
+          :maxHeight="500"
           :rowNumber="true"
           :rowSelection="true"
           :actionButton="true"

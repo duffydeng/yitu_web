@@ -100,10 +100,24 @@
         <!-- 查看明细弹窗 -->
         <a-modal
           v-model="detailModal.visible"
-          :title="detailModal.title"
-          width="900px"
+          :width="detailModal.fullscreen ? '100%' : '960px'"
+          :style="detailModal.fullscreen ? 'top:0;padding:0;max-width:100vw;' : 'top:40px;'"
           :footer="null"
+          :bodyStyle="detailModal.fullscreen ? { height: 'calc(100vh - 55px)', overflowY: 'auto' } : {}"
+          :wrapClassName="detailModal.fullscreen ? 'detail-modal-fullscreen' : ''"
           destroyOnClose>
+          <span slot="title" class="detail-modal-title">
+            {{ detailModal.title }}
+            <a-icon
+              :type="detailModal.fullscreen ? 'fullscreen-exit' : 'fullscreen'"
+              class="detail-modal-fullscreen-btn"
+              @click.stop="toggleDetailFullscreen"
+            />
+          </span>
+          <!-- 工具栏 -->
+          <div style="margin-bottom:8px;">
+            <a-button type="primary" icon="plus" size="small" @click="handleDetailAdd">新增</a-button>
+          </div>
           <a-table
             size="middle"
             bordered
@@ -113,10 +127,64 @@
             :pagination="{ total: detailModal.total, pageSize: detailModal.pageSize, current: detailModal.current, showSizeChanger: true, showTotal: t => '共 ' + t + ' 条' }"
             :loading="detailModal.loading"
             @change="handleDetailTableChange">
-            <template slot="detailDeleteFlag" slot-scope="deleteFlag">
+            <span slot="detailDeleteFlag" slot-scope="deleteFlag">
               <a-tag v-if="deleteFlag == 0 || deleteFlag == '0'" color="green">正常</a-tag>
               <a-tag v-else color="red">已删除</a-tag>
-            </template>
+            </span>
+            <!-- 关联明细行内编辑字段 -->
+            <span slot="editBarCode" slot-scope="text, record">
+              <a-input
+                v-if="detailModal.editingId === record.id"
+                v-model="detailModal.editingRecord.barCode"
+                size="small"
+                style="width:130px;"
+              />
+              <span v-else>{{ text }}</span>
+            </span>
+            <span slot="editOtherField1" slot-scope="text, record">
+              <a-input
+                v-if="detailModal.editingId === record.id"
+                v-model="detailModal.editingRecord.otherField1"
+                size="small"
+              />
+              <span v-else>{{ text }}</span>
+            </span>
+            <!-- 商品明细行内编辑字段 -->
+            <span slot="editProductName" slot-scope="text, record">
+              <a-input
+                v-if="detailModal.editingId === record.id"
+                v-model="detailModal.editingRecord.name"
+                size="small"
+              />
+              <span v-else>{{ text }}</span>
+            </span>
+            <span slot="editProductType" slot-scope="text, record">
+              <a-select
+                v-if="detailModal.editingId === record.id"
+                v-model="detailModal.editingRecord.productType"
+                size="small"
+                style="width:90px;"
+              >
+                <a-select-option value="商品">商品</a-select-option>
+                <a-select-option value="分类">分类</a-select-option>
+              </a-select>
+              <span v-else>{{ text }}</span>
+            </span>
+            <!-- 操作列 -->
+            <span slot="detailAction" slot-scope="text, record">
+              <span v-if="detailModal.editingId === record.id">
+                <a @click="handleDetailSave(record)">保存</a>
+                <a-divider type="vertical" />
+                <a @click="handleDetailCancel">取消</a>
+              </span>
+              <span v-else>
+                <a @click="handleDetailEdit(record)">编辑</a>
+                <a-divider type="vertical" />
+                <a-popconfirm title="确定删除吗?" @confirm="handleDetailDelete(record)">
+                  <a style="color:#f5222d;">删除</a>
+                </a-popconfirm>
+              </span>
+            </span>
           </a-table>
         </a-modal>
       </a-card>
@@ -201,8 +269,12 @@
           pageSize: 10,
           current: 1,
           productType: '',
-          productId: ''
+          productId: '',
+          fullscreen: false,
+          editingId: '',
+          editingRecord: {}
         },
+        detailAddMode: false,
         // 左侧类别树
         categoryTree: [],
         categoryTreeCollapsed: false,
@@ -282,6 +354,7 @@
           return
         }
         this.currentProductId = this.selectedRowKeys[0]
+        this.detailAddMode = false
         if (this.$refs.selectMaterialModal && typeof this.$refs.selectMaterialModal.showModal === 'function') {
           this.$refs.selectMaterialModal.showModal()
         }
@@ -295,13 +368,17 @@
         this.detailModal.productId = record.id
         this.detailModal.productType = productType
         this.detailModal.current = 1
+        this.detailModal.fullscreen = false
+        this.detailModal.editingId = ''
+        this.detailModal.editingRecord = {}
         if (productType === '商品') {
           this.detailModal.title = '商品明细'
           this.detailModal.columns = [
             { title: '#', key: 'rowIndex', width: 60, align: 'center', customRender: (t, r, index) => parseInt(index) + 1 },
-            { title: '名称', dataIndex: 'name', align: 'left' },
-            { title: '产品类型', dataIndex: 'productType', width: 100, align: 'center' },
-            { title: '状态', dataIndex: 'deleteFlag', width: 80, align: 'center', scopedSlots: { customRender: 'detailDeleteFlag' } }
+            { title: '名称', dataIndex: 'name', align: 'left', scopedSlots: { customRender: 'editProductName' } },
+            { title: '产品类型', dataIndex: 'productType', width: 110, align: 'center', scopedSlots: { customRender: 'editProductType' } },
+            { title: '状态', dataIndex: 'deleteFlag', width: 80, align: 'center', scopedSlots: { customRender: 'detailDeleteFlag' } },
+            { title: '操作', key: 'action', width: 120, align: 'center', scopedSlots: { customRender: 'detailAction' } }
           ]
         } else {
           this.detailModal.title = '分类关联明细'
@@ -309,9 +386,10 @@
             { title: '#', key: 'rowIndex', width: 60, align: 'center', customRender: (t, r, index) => parseInt(index) + 1 },
             { title: '产品名称', dataIndex: 'productName', align: 'left' },
             { title: '物料名称', dataIndex: 'materialName', align: 'left' },
-            { title: '条码', dataIndex: 'barCode', width: 150, align: 'center' },
-            { title: '小程序描述', dataIndex: 'otherField1', align: 'left' },
-            { title: '状态', dataIndex: 'deleteFlag', width: 80, align: 'center', scopedSlots: { customRender: 'detailDeleteFlag' } }
+            { title: '条码', dataIndex: 'barCode', width: 150, align: 'center', scopedSlots: { customRender: 'editBarCode' } },
+            { title: '小程序描述', dataIndex: 'otherField1', align: 'left', scopedSlots: { customRender: 'editOtherField1' } },
+            { title: '状态', dataIndex: 'deleteFlag', width: 80, align: 'center', scopedSlots: { customRender: 'detailDeleteFlag' } },
+            { title: '操作', key: 'action', width: 120, align: 'center', scopedSlots: { customRender: 'detailAction' } }
           ]
         }
         this.detailModal.visible = true
@@ -340,7 +418,8 @@
         this.loadDetailData()
       },
       selectMaterialOK (rows) {
-        if (!this.currentProductId) {
+        let productId = this.detailAddMode ? this.detailModal.productId : this.currentProductId
+        if (!productId) {
           this.$message.warning('请先选择一条产品记录！')
           return
         }
@@ -351,14 +430,90 @@
         let materialIds = rows.map(r => r.id).filter(id => id)
         materialIds = Array.from(new Set(materialIds))
         let params = {
-          productId: this.currentProductId,
+          productId: productId,
           materialIds: materialIds
         }
-        httpAction('/productMaterialRelation/batchAdd', params, 'post').then((res) => {
+        httpAction('/productMaterialRelation/add', params, 'post').then((res) => {
           if (res && res.code === 200) {
             this.$message.success((res.data && res.data.message) || '成功')
+            if (this.detailAddMode) {
+              this.loadDetailData()
+            }
           } else {
             this.$message.warning((res && res.data && res.data.message) || (res && res.message) || '保存失败')
+          }
+        })
+      },
+      // 明细弹窗全屏切换
+      toggleDetailFullscreen () {
+        this.detailModal.fullscreen = !this.detailModal.fullscreen
+      },
+      // 明细弹窗新增
+      handleDetailAdd () {
+        if (this.detailModal.productType === '分类') {
+          this.detailAddMode = true
+          if (this.$refs.selectMaterialModal && typeof this.$refs.selectMaterialModal.showModal === 'function') {
+            this.$refs.selectMaterialModal.showModal()
+          }
+        } else {
+          // 商品明细新增：打开 ProductCategoryModal，parentId 默认设置为当前产品
+          let defaultRecord = { parentId: this.detailModal.productId, productType: '商品' }
+          this.$refs.modalForm.edit(defaultRecord)
+          this.$refs.modalForm.$once('ok', () => {
+            this.loadDetailData()
+          })
+        }
+      },
+      // 明细行内编辑开始
+      handleDetailEdit (record) {
+        this.detailModal.editingId = record.id
+        this.detailModal.editingRecord = Object.assign({}, record)
+      },
+      // 明细行内编辑保存
+      handleDetailSave (record) {
+        let editRec = this.detailModal.editingRecord
+        let url, method, params
+        if (this.detailModal.productType === '商品') {
+          url = '/product/edit'
+          method = 'put'
+          params = Object.assign({}, record, { name: editRec.name, productType: editRec.productType })
+        } else {
+          url = '/productMaterialRelation/update'
+          method = 'put'
+          params = Object.assign({}, record, { barCode: editRec.barCode, otherField1: editRec.otherField1 })
+        }
+        httpAction(url, params, method).then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success('保存成功')
+            this.detailModal.editingId = ''
+            this.detailModal.editingRecord = {}
+            this.loadDetailData()
+          } else {
+            this.$message.warning((res && res.message) || '保存失败')
+          }
+        })
+      },
+      // 明细行内编辑取消
+      handleDetailCancel () {
+        this.detailModal.editingId = ''
+        this.detailModal.editingRecord = {}
+      },
+      // 明细删除
+      handleDetailDelete (record) {
+        let url, method
+        if (this.detailModal.productType === '商品') {
+          url = '/product/delete?id=' + record.id
+          method = 'delete'
+        } else {
+          url = '/productMaterialRelation/delete?id=' + record.id
+          method = 'delete'
+        }
+        httpAction(url, {}, method).then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success('删除成功')
+            this.loadDetailData()
+          } else {
+            this.$message.warning((res && res.message) || '删除失败')
           }
         })
       }
@@ -427,5 +582,38 @@
     flex: 1;
     min-width: 0;
     overflow: auto;
+  }
+
+  .detail-modal-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 24px;
+  }
+
+  .detail-modal-fullscreen-btn {
+    font-size: 16px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .detail-modal-fullscreen-btn:hover {
+    color: #1890ff;
+  }
+
+  .detail-modal-fullscreen >>> .ant-modal {
+    max-width: 100vw;
+    margin: 0;
+  }
+
+  .detail-modal-fullscreen >>> .ant-modal-content {
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .detail-modal-fullscreen >>> .ant-modal-body {
+    height: calc(100vh - 55px);
+    overflow-y: auto;
   }
 </style>
