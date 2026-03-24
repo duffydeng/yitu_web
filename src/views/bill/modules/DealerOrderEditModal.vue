@@ -90,6 +90,11 @@
               <a-input v-decorator="['receivePhone']" placeholder="请输入收货电话"></a-input>
             </a-form-item>
           </a-col>
+          <a-col :span="8">
+            <a-form-item label="快递单号" :labelCol="labelCol" :wrapperCol="wrapperCol">
+              <a-input v-decorator="['expressNumber']" placeholder="请输入快递单号"></a-input>
+            </a-form-item>
+          </a-col>
           <a-col :span="24">
             <a-form-item label="收货地址" :labelCol="{span: 2}" :wrapperCol="{span: 22}">
               <a-input v-decorator="['receiveAddressDetail']" placeholder="请输入收货地址"></a-input>
@@ -454,7 +459,7 @@ export default {
               'orderNumber', 'organizationName', 'customerName', 'customerPhone',
               'productName', 'orderStatus', 'totalPrice', 'deposit', 'deductStock',
               'planFinishTime', 'afterSaleContact', 'receivePerson', 'receivePhone',
-              'receiveAddressDetail'
+              'receiveAddressDetail', 'expressNumber'
             ))
           })
           
