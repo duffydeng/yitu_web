@@ -96,6 +96,7 @@
 
         <product-category-modal ref="modalForm" @ok="modalFormOk"></product-category-modal>
         <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
+        <j-select-product-modal ref="selectProductModal" :multi="true" @ok="onSelectProductOK" />
 
         <!-- 查看明细弹窗 -->
         <a-modal
@@ -183,6 +184,55 @@
                 <a-popconfirm title="确定删除吗?" @confirm="handleDetailDelete(record)">
                   <a style="color:#f5222d;">删除</a>
                 </a-popconfirm>
+                <span v-if="detailModal.productType === '分类'">
+                  <a-divider type="vertical" />
+                  <a @click="handleBindBarCode(record)">关联条码</a>
+                  <a-divider type="vertical" />
+                  <a @click="handleOpenRelationDetail(record)">联动明细</a>
+                </span>
+              </span>
+            </span>
+          </a-table>
+        </a-modal>
+
+        <!-- 联动明细弹窗 -->
+        <a-modal
+          v-model="relationDetailModal.visible"
+          width="860px"
+          :title="relationDetailModal.title"
+          :footer="null"
+          style="top:60px;"
+          destroyOnClose>
+          <a-table
+            size="middle"
+            bordered
+            rowKey="id"
+            :columns="relationDetailModal.columns"
+            :dataSource="relationDetailModal.dataSource"
+            :pagination="{ total: relationDetailModal.total, pageSize: relationDetailModal.pageSize, current: relationDetailModal.current, showSizeChanger: true, showTotal: t => '共 ' + t + ' 条' }"
+            :loading="relationDetailModal.loading"
+            @change="handleRelationDetailTableChange">
+            <span slot="editSunBarCode" slot-scope="text, record">
+              <a-input
+                v-if="relationDetailModal.editingId === record.id"
+                v-model="relationDetailModal.editingRecord.sunBarCode"
+                size="small"
+                style="width:140px;"
+              />
+              <span v-else>{{ text }}</span>
+            </span>
+            <span slot="relationAction" slot-scope="text, record">
+              <span v-if="relationDetailModal.editingId === record.id">
+                <a @click="handleRelationSave(record)">保存</a>
+                <a-divider type="vertical" />
+                <a @click="handleRelationCancel">取消</a>
+              </span>
+              <span v-else>
+                <a @click="handleRelationEdit(record)">编辑</a>
+                <a-divider type="vertical" />
+                <a-popconfirm title="确定删除吗?" @confirm="handleRelationDelete(record)">
+                  <a style="color:#f5222d;">删除</a>
+                </a-popconfirm>
               </span>
             </span>
           </a-table>
@@ -197,13 +247,15 @@
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import { httpAction, getAction, getFileAccessHttpUrl } from '@/api/manage'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
+  import JSelectProductModal from '@/components/jeecgbiz/modal/JSelectProductModal'
 
   export default {
     name: 'ProductCategoryList',
     mixins: [JeecgListMixin],
     components: {
       ProductCategoryModal,
-      JSelectMaterialModal
+      JSelectMaterialModal,
+      JSelectProductModal
     },
     data () {
       return {
@@ -275,6 +327,25 @@
           editingRecord: {}
         },
         detailAddMode: false,
+        bindBarCodeRow: null,
+        relationDetailModal: {
+          visible: false,
+          title: '',
+          loading: false,
+          dataSource: [],
+          total: 0,
+          pageSize: 10,
+          current: 1,
+          productMaterialId: '',
+          editingId: '',
+          editingRecord: {},
+          columns: [
+            { title: '#', key: 'rowIndex', width: 60, align: 'center', customRender: (t, r, index) => parseInt(index) + 1 },
+            { title: '子条码', dataIndex: 'sunBarCode', width: 160, align: 'center', scopedSlots: { customRender: 'editSunBarCode' } },
+            { title: '子条码名称', dataIndex: 'sunBarName', align: 'left', ellipsis: true },
+            { title: '操作', key: 'action', width: 130, align: 'center', scopedSlots: { customRender: 'relationAction' } }
+          ]
+        },
         // 左侧类别树
         categoryTree: [],
         categoryTreeCollapsed: false,
@@ -512,6 +583,115 @@
           if (res && res.code === 200) {
             this.$message.success('删除成功')
             this.loadDetailData()
+          } else {
+            this.$message.warning((res && res.message) || '删除失败')
+          }
+        })
+      },
+      // 打开联动商品弹窗
+      handleBindBarCode (record) {
+        this.bindBarCodeRow = record
+        if (this.$refs.selectProductModal && typeof this.$refs.selectProductModal.showModal === 'function') {
+          this.$refs.selectProductModal.showModal()
+        }
+      },
+      // 联动商品选择回调
+      onSelectProductOK (rows) {
+        if (!this.bindBarCodeRow) {
+          this.$message.warning('请先选择明细行！')
+          return
+        }
+        if (!rows || rows.length === 0) {
+          this.$message.warning('请选择商品！')
+          return
+        }
+        let sunBarCodes = rows.map(r => r.mBarCode).filter(c => c)
+        if (sunBarCodes.length === 0) {
+          this.$message.warning('所选商品暂无条码数据！')
+          return
+        }
+        let params = {
+          productMaterialId: this.bindBarCodeRow.id,
+          sunBarCodes: sunBarCodes
+        }
+        httpAction('/materialRelation/bindBarCodes', params, 'post').then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success((res.message || (res.data && res.data.message)) || '联动成功')
+            this.bindBarCodeRow = null
+          } else {
+            this.$message.warning((res && res.message) || '联动失败')
+          }
+        })
+      },
+      // 打开联动明细弹窗
+      handleOpenRelationDetail (record) {
+        this.relationDetailModal.productMaterialId = record.id
+        this.relationDetailModal.title = '联动明细 - ' + (record.barCode || record.materialName || record.id)
+        this.relationDetailModal.current = 1
+        this.relationDetailModal.editingId = ''
+        this.relationDetailModal.editingRecord = {}
+        this.relationDetailModal.visible = true
+        this.loadRelationDetailData()
+      },
+      // 加载联动明细数据
+      loadRelationDetailData () {
+        let { productMaterialId, current, pageSize } = this.relationDetailModal
+        this.relationDetailModal.loading = true
+        getAction('/materialRelation/list', {
+          search: JSON.stringify({ productMaterialId }),
+          currentPage: current,
+          pageSize
+        }).then((res) => {
+          if (res && res.code === 200) {
+            let data = res.data
+            this.relationDetailModal.dataSource = (data && data.rows) || []
+            this.relationDetailModal.total = parseInt((data && data.total) || 0)
+          } else {
+            this.$message.warning((res && res.message) || '获取联动明细失败')
+          }
+        }).finally(() => {
+          this.relationDetailModal.loading = false
+        })
+      },
+      // 联动明细分页
+      handleRelationDetailTableChange (pagination) {
+        this.relationDetailModal.current = pagination.current
+        this.relationDetailModal.pageSize = pagination.pageSize
+        this.loadRelationDetailData()
+      },
+      // 联动明细行内编辑开始
+      handleRelationEdit (record) {
+        this.relationDetailModal.editingId = record.id
+        this.relationDetailModal.editingRecord = Object.assign({}, record)
+      },
+      // 联动明细行内编辑保存
+      handleRelationSave (record) {
+        let editRec = this.relationDetailModal.editingRecord
+        let params = Object.assign({}, record, {
+          sunBarCode: editRec.sunBarCode
+        })
+        httpAction('/materialRelation/update', params, 'put').then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success('保存成功')
+            this.relationDetailModal.editingId = ''
+            this.relationDetailModal.editingRecord = {}
+            this.loadRelationDetailData()
+          } else {
+            this.$message.warning((res && res.message) || '保存失败')
+          }
+        })
+      },
+      // 联动明细行内编辑取消
+      handleRelationCancel () {
+        this.relationDetailModal.editingId = ''
+        this.relationDetailModal.editingRecord = {}
+      },
+      // 联动明细删除
+      handleRelationDelete (record) {
+        httpAction('/materialRelation/delete?id=' + record.id, {}, 'delete').then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success('删除成功')
+            this.loadRelationDetailData()
           } else {
             this.$message.warning((res && res.message) || '删除失败')
           }

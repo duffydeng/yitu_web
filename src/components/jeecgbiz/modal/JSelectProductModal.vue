@@ -16,15 +16,12 @@
             <a-row :gutter="24">
               <a-col :md="8" :sm="24">
                 <a-form-item label="关键词" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                  <a-input ref="keyword" placeholder="请输入名称查询" v-model="queryParam.name"></a-input>
+                  <a-input ref="keyword" placeholder="请输入条码、名称等查询" v-model="queryParam.materialParam"></a-input>
                 </a-form-item>
               </a-col>
               <a-col :md="8" :sm="24">
-                <a-form-item label="类型" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                  <a-select v-model="queryParam.productType" placeholder="请选择" allow-clear>
-                    <a-select-option value="商品">商品</a-select-option>
-                    <a-select-option value="分类">分类</a-select-option>
-                  </a-select>
+                <a-form-item label="规格" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                  <a-input placeholder="请输入规格查询" v-model="queryParam.standard"></a-input>
                 </a-form-item>
               </a-col>
               <a-col :md="8" :sm="24">
@@ -54,6 +51,7 @@
 
 <script>
   import { getAction } from '@/api/manage'
+  import { filterObj } from '@/utils/util'
   import { mixinDevice } from '@/utils/mixin'
 
   export default {
@@ -63,11 +61,11 @@
     data () {
       return {
         visible: false,
-        title: '选择商品(产品列表)',
+        title: '选择商品',
         loading: false,
         queryParam: {
-          name: '',
-          productType: undefined
+          materialParam: '',
+          standard: ''
         },
         labelCol: { span: 5 },
         wrapperCol: { span: 18, offset: 1 },
@@ -82,9 +80,11 @@
               return parseInt(index) + 1
             }
           },
-          { title: '产品名称', dataIndex: 'name', width: 260, ellipsis: true },
-          { title: '类型', dataIndex: 'productType', width: 100, align: 'center' },
-          { title: '父级ID', dataIndex: 'parentId', width: 120, align: 'center' }
+          { title: '条码', dataIndex: 'mBarCode', width: 160, align: 'center' },
+          { title: '名称', dataIndex: 'name', ellipsis: true },
+          { title: '类别', dataIndex: 'categoryName', width: 120 },
+          { title: '规格', dataIndex: 'standard', width: 100 },
+          { title: '型号', dataIndex: 'model', width: 100 }
         ],
         dataSource: [],
         selectedRowKeys: [],
@@ -126,7 +126,7 @@
         this.selectionRows = selectionRows
       },
       searchReset () {
-        this.queryParam = { name: '', productType: undefined }
+        this.queryParam = { materialParam: '', standard: '' }
         this.loadData(1)
       },
       onSearch () {
@@ -141,17 +141,12 @@
           this.ipagination.current = 1
         }
         this.loading = true
-        let params = {
-          pageNo: this.ipagination.current,
+        let params = filterObj({
+          search: JSON.stringify(this.queryParam),
+          currentPage: this.ipagination.current,
           pageSize: this.ipagination.pageSize
-        }
-        if (this.queryParam.name) {
-          params.name = this.queryParam.name
-        }
-        if (this.queryParam.productType) {
-          params.productType = this.queryParam.productType
-        }
-        getAction('/product/getParentList', params).then((res) => {
+        })
+        getAction('/material/list', params).then((res) => {
           if (res && res.code === 200) {
             let data = res.data
             if (Array.isArray(data)) {
