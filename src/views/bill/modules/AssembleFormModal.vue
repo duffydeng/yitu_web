@@ -324,8 +324,9 @@
             return
           }
           const mainBarCode = values[targetIndex].barCode
+          const opnum = values[targetIndex].operNumber
           that.bomLoading = true
-          getBomList({ barCode: mainBarCode }).then((res) => {
+          getBomList({ barCode: mainBarCode,operNumber:opnum }).then((res) => {
             if (res && res.code === 200) {
               let bomData = res.data.rows || res.data
               if (!bomData || bomData.length === 0) {
