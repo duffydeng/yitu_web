@@ -584,8 +584,8 @@
                 for (let i = 0; i < tab.dataSource.length; i++) {
                   let meInfo = tab.dataSource[i]
                   console.log(maxBarCode)
-                  console.log(addBigNumbers(maxBarCode, i+1))
-                  meInfo.barCode = addBigNumbers(maxBarCode, i+1)
+                  console.log(addBigNumbers(maxBarCode, i))
+                  meInfo.barCode = addBigNumbers(maxBarCode, i)
                   console.log(meInfo.barCode)
                   meTableData.push(meInfo)
                 }
@@ -1085,7 +1085,7 @@
           getMaxBarCode(this.queryCategoryIds ? { categoryIds: this.queryCategoryIds } : {}).then((res)=> {
             if (res && res.code === 200) {
               this.maxBarCodeInfo = res.data.barCode
-              this.maxBarCodeInfo = addBigNumbers(this.maxBarCodeInfo, 1)
+              this.maxBarCodeInfo = addBigNumbers(this.maxBarCodeInfo, 0)
               target.setValues([{rowKey: row.id, values: {barCode: this.maxBarCodeInfo, commodityUnit: unit?unit:''}}])
             }
           })
