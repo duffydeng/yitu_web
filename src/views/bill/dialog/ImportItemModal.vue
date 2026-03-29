@@ -45,6 +45,7 @@
         title:"导入明细",
         visible: false,
         prefixNo: '',
+        number: '',
         tmpUrl: '',
         model: {},
         tokenHeader: {'X-Access-Token': Vue.ls.get(ACCESS_TOKEN)},
@@ -71,8 +72,9 @@
       }
     },
     methods: {
-      add (prefixNo) {
+      add (prefixNo, number) {
         this.prefixNo = prefixNo
+        this.number = number || ''
         if(prefixNo === 'QGD') {
           this.tmpUrl = '/doc/apply_item_template.xls'
         } else if(prefixNo === 'CGDD' || prefixNo === 'XSDD') {
@@ -161,9 +163,11 @@
         }
       },
       setFileData() {
-        return {
-          'prefixNo': this.prefixNo
+        const data = { 'prefixNo': this.prefixNo }
+        if (this.prefixNo === 'ZZD' && this.number) {
+          data['number'] = this.number
         }
+        return data
       }
     }
   }
