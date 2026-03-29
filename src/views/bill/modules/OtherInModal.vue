@@ -355,6 +355,21 @@
             })
           })
         }
+      },
+      // 打开导入弹窗，传入当前表单的单据编号
+      onImport(prefixNo) {
+        const number = this.form.getFieldValue('number') || ''
+        this.$refs.importItemModalForm.add(prefixNo, number)
+      },
+      // 导入完成后：通过返回的 headerId 查询 getDetailList 刷新子表
+      importItemModalFormOk(headerId) {
+        if (!headerId) return
+        let params = {
+          headerId: headerId,
+          mpList: getMpListShort(Vue.ls.get('materialPropertyList')),
+          linkType: 'basic'
+        }
+        this.requestSubTableData(this.url.detailList, params, this.materialTable)
       }
     }
   }

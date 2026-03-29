@@ -167,7 +167,7 @@
       },
       setFileData() {
         const data = { 'prefixNo': this.prefixNo }
-        if (this.prefixNo === 'ZZD' && this.number) {
+        if (this.number) {
           data['number'] = this.number
         }
         return data
