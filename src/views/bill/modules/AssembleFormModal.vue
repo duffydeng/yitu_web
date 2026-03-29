@@ -68,6 +68,9 @@
               <a-col :md="6" :sm="24">
                 <a-button icon="import" @click="onImport(prefixNo)">导入明细</a-button>
               </a-col>
+              <a-col :md="6" :sm="24">
+                <a-button icon="export" @click="handleExportDetail">导出明细</a-button>
+              </a-col>
             </a-row>
           </template>
           <template #depotBatchSet>
@@ -430,6 +433,36 @@
       onImport(prefixNo) {
         const number = this.form.getFieldValue('number') || ''
         this.$refs.importItemModalForm.add(prefixNo, number)
+      },
+      // 导出明细
+      handleExportDetail() {
+        const number = this.form.getFieldValue('number')
+        if (!number) {
+          this.$message.warning('请先填写单据编号')
+          return
+        }
+        const { downFile } = require('@/api/manage')
+        downFile('/depotItem/exportDetailByNumber', { number }).then((data) => {
+          if (!data) {
+            this.$message.warning('文件下载失败')
+            return
+          }
+          if (typeof window.navigator.msSaveBlob !== 'undefined') {
+            window.navigator.msSaveBlob(new Blob([data], { type: 'application/vnd.ms-excel' }), '组装单明细导出.xls')
+          } else {
+            let url = window.URL.createObjectURL(new Blob([data], { type: 'application/vnd.ms-excel' }))
+            let link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = url
+            link.setAttribute('download', '组装单明细导出_' + new Date().getTime() + '.xls')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+          }
+        }).catch(() => {
+          this.$message.error('导出失败')
+        })
       },
       // 导入完成后：用弹窗中的单据编号请求详情接口，刷新页面表头和子表
       importItemModalFormOk() {
