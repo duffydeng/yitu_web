@@ -464,30 +464,15 @@
           this.$message.error('导出失败')
         })
       },
-      // 导入完成后：用弹窗中的单据编号请求详情接口，刷新页面表头和子表
-      importItemModalFormOk() {
-        const number = this.form.getFieldValue('number')
-        if (!number) return
-        getAction('/depotHead/getDetailByNumber', { number }).then((res) => {
-          if (res && res.code === 200 && res.data) {
-            const data = res.data
-            this.model = Object.assign(this.model, data)
-            this.model.operTime = data.operTimeStr || data.operTime
-            this.fileList = data.fileName || []
-            this.$nextTick(() => {
-              this.form.setFieldsValue(pick(data, 'organId', 'operTime', 'number', 'remark',
-                'discount', 'discountMoney', 'discountLastMoney', 'otherMoney', 'accountId', 'changeAmount'))
-            })
-            let params = {
-              headerId: data.id,
-              mpList: getMpListShort(Vue.ls.get('materialPropertyList')),
-              linkType: 'basic'
-            }
-            this.requestSubTableData(this.url.detailList, params, this.materialTable)
-          } else {
-            this.$message.warning((res && res.message) || '刷新失败')
-          }
-        })
+      // 导入完成后：通过返回的 headerId 查询 getDetailList 刷新子表
+      importItemModalFormOk(headerId) {
+        if (!headerId) return
+        let params = {
+          headerId: headerId,
+          mpList: getMpListShort(Vue.ls.get('materialPropertyList')),
+          linkType: 'basic'
+        }
+        this.requestSubTableData(this.url.detailList, params, this.materialTable)
       }
     }
   }

@@ -149,8 +149,11 @@
         if (info.file.status === 'done') {
           if (info.file.response) {
             if (info.file.response.code === 200) {
-              this.$message.success('导入成功' + info.file.response.data.rows.length + '条')
-              this.$emit('ok', info.file.response.data.rows);
+              const resData = info.file.response.data
+              const successMsg = (resData && resData.message) || '导入成功'
+              this.$message.success(successMsg)
+              const headerId = resData && (resData.data || resData.id || resData.headerId)
+              this.$emit('ok', headerId);
               this.close()
             } else if (info.file.response.code === 500) {
               this.$message.warn(info.file.response.data.message)
