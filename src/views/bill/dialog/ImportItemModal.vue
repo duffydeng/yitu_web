@@ -83,6 +83,8 @@
           this.tmpUrl = '/doc/in_out_item_template.xls'
         } else if(prefixNo === 'PD') {
           this.tmpUrl = '/doc/stock_taking_template.xls'
+        } else if(prefixNo === 'ZZD') {
+          this.tmpUrl = '/doc/assemble_template.xls'
         }
         this.form.resetFields()
         this.model = Object.assign({}, {})

@@ -65,6 +65,9 @@
               <a-col :md="6" :sm="24">
                 <a-button icon="apartment" @click="handleExpandBom" :loading="bomLoading">拆解条码</a-button>
               </a-col>
+              <a-col :md="6" :sm="24">
+                <a-button icon="import" @click="onImport(prefixNo)">导入明细</a-button>
+              </a-col>
             </a-row>
           </template>
           <template #depotBatchSet>
@@ -94,6 +97,7 @@
     </a-spin>
     <depot-modal ref="depotModalForm" @ok="depotModalFormOk"></depot-modal>
     <batch-set-depot ref="batchSetDepotModalForm" @ok="batchSetDepotModalFormOk"></batch-set-depot>
+    <import-item-modal ref="importItemModalForm" @ok="importItemModalFormOk"></import-item-modal>
     <workflow-iframe ref="modalWorkflow" @ok="workflowModalFormOk"></workflow-iframe>
     <bill-print-iframe ref="modalPrint"></bill-print-iframe>
     <bill-print-pro-iframe ref="modalPrintPro"></bill-print-pro-iframe>
@@ -103,6 +107,7 @@
   import pick from 'lodash.pick'
   import DepotModal from '../../system/modules/DepotModal'
   import BatchSetDepot from '../dialog/BatchSetDepot'
+  import ImportItemModal from '../dialog/ImportItemModal'
   import WorkflowIframe from '@/components/tools/WorkflowIframe'
   import BillPrintIframe from '../dialog/BillPrintIframe'
   import BillPrintProIframe from '../dialog/BillPrintProIframe'
@@ -121,6 +126,7 @@
     components: {
       DepotModal,
       BatchSetDepot,
+      ImportItemModal,
       WorkflowIframe,
       BillPrintIframe,
       BillPrintProIframe,
