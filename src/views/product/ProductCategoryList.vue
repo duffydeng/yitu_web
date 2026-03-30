@@ -357,6 +357,59 @@
       this.loadCategoryTree()
     },
     methods: {
+      // 重写 modalFormOk，新增/修改成功后同时刷新类别树和列表
+      modalFormOk() {
+        this.loadData()
+        this.loadCategoryTree()
+      },
+      // 重写 handleDelete，删除成功后同时刷新类别树和列表
+      handleDelete(id) {
+        var that = this
+        this.$confirm({
+          title: "确认删除",
+          content: "确定删除该条记录吗?",
+          okText: "确认",
+          cancelText: "取消",
+          onOk: function() {
+            deleteAction(that.url.delete, {id: id}).then((res) => {
+              if(res.code === 200){
+                that.loadData()
+                that.loadCategoryTree()
+              } else {
+                that.$message.warning(res.message)
+              }
+            });
+          }
+        })
+      },
+      // 重写 batchDel，批量删除成功后同时刷新类别树和列表
+      batchDel() {
+        if(!this.url.deleteBatch){
+          this.$message.error("请设置url.deleteBatch属性!")
+          return
+        }
+        if (this.selectedRowKeys.length <= 0) {
+          this.$message.warning('请选择一条记录！');
+          return;
+        }
+        var that = this
+        this.$confirm({
+          title: "确认删除",
+          content: "确定删除选中的记录吗?",
+          okText: "确认",
+          cancelText: "取消",
+          onOk: function() {
+            deleteAction(that.url.deleteBatch, {ids: that.selectedRowKeys.join(',')}).then((res) => {
+              if(res.code === 200){
+                that.loadData()
+                that.loadCategoryTree()
+              } else {
+                that.$message.warning(res.message)
+              }
+            });
+          }
+        })
+      },
       // 加载产品类别树（数据格式同 materialCategory/getMaterialCategoryTree）
       loadCategoryTree () {
         let that = this
