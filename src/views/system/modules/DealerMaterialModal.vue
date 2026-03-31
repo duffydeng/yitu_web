@@ -230,8 +230,7 @@
           onOk: function () {
             that.confirmLoading = true
             let params = {
-              id: that.dealerInfo.id,
-              dealerMaterialIds: that.selectedRowKeys
+              ids: that.selectedRowKeys.join(',')
             }
             
             deleteAction(that.url.deleteMaterials, params).then((res) => {
