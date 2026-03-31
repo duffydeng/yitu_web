@@ -34,8 +34,21 @@
         
         <!-- 操作按钮 -->
         <div class="table-operator" style="margin-bottom: 16px;">
+          <a-select
+            v-model="selectedProductId"
+            placeholder="请选择商品"
+            style="width: 300px; margin-right: 8px;"
+            show-search
+            option-filter-prop="children"
+            allow-clear
+            @dropdownVisibleChange="onProductDropdownOpen"
+          >
+            <a-select-option v-for="item in productList" :key="item.id" :value="item.id">
+              {{ item.name }}
+            </a-select-option>
+          </a-select>
           <a-button @click="handleAddMaterial" type="primary" icon="plus">添加商品</a-button>
-          <a-button @click="handleBatchDelete" icon="delete">批量删除</a-button>
+          <a-button @click="handleBatchDelete" icon="delete" style="margin-left: 8px;">批量删除</a-button>
         </div>
 
         <!-- 商品明细列表 -->
@@ -60,20 +73,15 @@
         </a-table>
       </a-spin>
     </a-modal>
-    
-    <j-select-product-modal ref="selectProductModal" :multi="true" @ok="selectProductOK" />
   </div>
 </template>
 
 <script>
   import { getAction, postAction, deleteAction } from '@/api/manage'
-  import JSelectProductModal from '@/components/jeecgbiz/modal/JSelectProductModal'
 
   export default {
     name: "DealerMaterialModal",
-    components: {
-      JSelectProductModal
-    },
+    components: {},
     data () {
       return {
         title: "商品明细管理",
@@ -84,6 +92,8 @@
         materialLoading: false,
         materialDataSource: [],
         selectedRowKeys: [],
+        productList: [],
+        selectedProductId: undefined,
         materialColumns: [
           {
             title: '#',
@@ -95,9 +105,9 @@
               return parseInt(index) + 1
             }
           },
-          { title: '产品名称', dataIndex: 'productName', width: 350, ellipsis: true, scopedSlots: { customRender: 'productName' } }
+          { title: '产品名称', dataIndex: 'productName', ellipsis: true, scopedSlots: { customRender: 'productName' } }
         ],
-        materialScroll: { x: 520 },
+        materialScroll: { x: true },
         materialPagination: {
           current: 1,
           pageSize: 10,
@@ -111,7 +121,7 @@
         },
         url: {
           list: '/dealerMaterial/listByDealerId',
-          editMaterials: '/dealer/editMaterials',
+          add: '/dealerMaterial/add',
           deleteMaterials: '/dealer/deleteMaterials'
         }
       }
@@ -121,7 +131,9 @@
         this.dealerInfo = record
         this.visible = true
         this.selectedRowKeys = []
+        this.selectedProductId = undefined
         this.loadMaterialData(record.id)
+        this.loadProductList()
       },
       close () {
         this.$emit('close');
@@ -159,36 +171,50 @@
         })
       },
       handleAddMaterial() {
-        this.$refs.selectProductModal.showModal()
-      },
-      selectProductOK(rows, ids) {
-        if (!rows || rows.length === 0) {
-          this.$message.warning('请选择要添加的商品！')
+        if (!this.selectedProductId) {
+          this.$message.warning('请先选择商品！')
           return
         }
-        
-        // 提取商品BOM ID数组
-        let bomIds = rows.map(row => row.bomId || row.id).filter(id => id)
-        if (bomIds.length === 0) {
-          this.$message.warning('选中商品缺少BOM信息！')
-          return
-        }
-        
+        const selectedProduct = this.productList.find(item => item.id === this.selectedProductId)
         this.confirmLoading = true
         let params = {
-          id: this.dealerInfo.id,
-          bomIds: bomIds
+          dealerId: this.dealerInfo.id,
+          bomId: this.selectedProductId,
+          productName: selectedProduct ? selectedProduct.name : ''
         }
-        
-        postAction(this.url.editMaterials, params).then(res => {
+        postAction(this.url.add, params).then(res => {
           if (res.code === 200) {
-            this.$message.success(res.data.message || '添加成功')
+            this.$message.success((res.data && res.data.message) || '添加成功')
+            this.selectedProductId = undefined
             this.loadMaterialData(this.dealerInfo.id)
           } else {
-            this.$message.error(res.data.message || '添加失败')
+            this.$message.error((res.data && res.data.message) || res.message || '添加失败')
           }
         }).finally(() => {
           this.confirmLoading = false
+        })
+      },
+      onProductDropdownOpen(open) {
+        if (open && this.productList.length === 0) {
+          this.loadProductList()
+        }
+      },
+      loadProductList() {
+        getAction('/product/getParentList', {}).then(res => {
+          if (res && res.code === 200) {
+            let data = res.data
+            if (Array.isArray(data)) {
+              this.productList = data
+            } else if (data && Array.isArray(data.rows)) {
+              this.productList = data.rows
+            } else {
+              this.productList = []
+            }
+          } else {
+            this.productList = []
+          }
+        }).catch(() => {
+          this.productList = []
         })
       },
       handleBatchDelete() {
