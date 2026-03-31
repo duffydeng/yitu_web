@@ -522,7 +522,7 @@
       loadDetailData () {
         let { productId, productType, current, pageSize } = this.detailModal
         let baseUrl = productType === '商品' ? '/product/detailProductList' : '/product/detailRelationList'
-        let url = baseUrl + '?id=' + productId
+        let url = baseUrl + '?id=' + productId+'&current='+current+'&pageSize='+pageSize
         let params = { pageNo: current, pageSize }
         this.detailModal.loading = true
         httpAction(url, params, 'get').then((res) => {
