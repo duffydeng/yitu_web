@@ -245,7 +245,7 @@
 <script>
   import ProductCategoryModal from './modules/ProductCategoryModal'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
-  import { httpAction, getAction, getFileAccessHttpUrl } from '@/api/manage'
+  import { httpAction, getAction, deleteAction, getFileAccessHttpUrl } from '@/api/manage'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
   import JSelectProductModal from '@/components/jeecgbiz/modal/JSelectProductModal'
 
