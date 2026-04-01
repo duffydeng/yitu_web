@@ -1135,6 +1135,19 @@ export const BillModalMixin = {
       this.$refs.importItemModalForm.add(prefixNo);
     },
     importItemModalFormOk(data) {
+      // 接口返回 headerId（字符串或数字）时，赋值给 model.id 并刷新子表
+      if (data && !Array.isArray(data)) {
+        const headerId = data
+        this.model.id = headerId
+        let params = {
+          headerId: headerId,
+          mpList: getMpListShort(Vue.ls.get('materialPropertyList')),
+          linkType: 'basic'
+        }
+        this.requestSubTableData(this.url.detailList, params, this.materialTable)
+        return
+      }
+      // 兼容旧逻辑：返回 rows 数组
       this.materialTable.dataSource = data
       this.$nextTick(() => {
         let discountLastMoney = 0
