@@ -171,6 +171,16 @@
               </a-select>
               <span v-else>{{ text }}</span>
             </span>
+            <span slot="editSeqNum" slot-scope="text, record">
+              <a-input-number
+                v-if="detailModal.editingId === record.id"
+                v-model="detailModal.editingRecord.seqNum"
+                size="small"
+                style="width:70px;"
+                :min="0"
+              />
+              <span v-else>{{ text }}</span>
+            </span>
             <!-- 操作列 -->
             <span slot="detailAction" slot-scope="text, record">
               <span v-if="detailModal.editingId === record.id">
@@ -501,6 +511,7 @@
             { title: '#', key: 'rowIndex', width: 60, align: 'center', customRender: (t, r, index) => parseInt(index) + 1 },
             { title: '名称', dataIndex: 'name', align: 'left', scopedSlots: { customRender: 'editProductName' } },
             { title: '产品类型', dataIndex: 'productType', width: 110, align: 'center', scopedSlots: { customRender: 'editProductType' } },
+            { title: '排序', dataIndex: 'seqNum', width: 90, align: 'center', scopedSlots: { customRender: 'editSeqNum' } },
             { title: '状态', dataIndex: 'deleteFlag', width: 80, align: 'center', scopedSlots: { customRender: 'detailDeleteFlag' } },
             { title: '操作', key: 'action', width: 120, align: 'center', scopedSlots: { customRender: 'detailAction' } }
           ]
@@ -600,7 +611,7 @@
         if (this.detailModal.productType === '商品') {
           url = '/product/edit'
           method = 'put'
-          params = Object.assign({}, record, { name: editRec.name, productType: editRec.productType })
+          params = Object.assign({}, record, { name: editRec.name, productType: editRec.productType, seqNum: editRec.seqNum })
         } else {
           url = '/productMaterialRelation/update'
           method = 'put'
