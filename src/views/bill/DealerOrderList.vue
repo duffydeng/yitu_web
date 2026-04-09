@@ -111,6 +111,7 @@
             :columns="columns"
             :dataSource="dataSource"
             :pagination="ipagination"
+            :scroll="scroll"
             :loading="loading"
             :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
             :customRow="customRow"
@@ -317,6 +318,7 @@
             }
           }
         ],
+        scroll: { x: 3310 },
         url: {
           list: "/order/list",
           delete: "/order/delete",
