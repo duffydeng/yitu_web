@@ -74,7 +74,7 @@
           <a-button @click="handleAssemble" type="primary" icon="check">完工</a-button>
           <a-button @click="handleQualityCheck" type="primary" icon="safety">质检完成</a-button>
           <a-button @click="handleDelivery" type="primary" icon="car">发货</a-button>
-          <a-button @click="handleDeductStock" type="primary" icon="minus-circle">扣减库存</a-button>
+<!--          <a-button @click="handleDeductStock" type="primary" icon="minus-circle">扣减库存</a-button>-->
           <a-button v-if="isShowExcel && btnEnableList.indexOf(3)>-1" icon="download" @click="handleExport">导出</a-button>
           <a-button icon="file-excel" @click="downloadCustomOrder">下载定制单</a-button>
           <a-popover trigger="click" placement="right">
@@ -120,6 +120,8 @@
             @change="handleTableChange">
             <span slot="action" slot-scope="text, record">
               <a @click="handleEdit(record)">编辑</a>
+              <a-divider type="vertical" />
+              <a @click="handleViewAttachment(record)">查看附件</a>
             </span>
 			<template slot="customRenderStatus" slot-scope="status">
               <a-tag v-if="status == '0'" color="blue">已创建</a-tag>
@@ -155,6 +157,41 @@
         <delivery-modal ref="deliveryModal" @ok="modalFormOk"></delivery-modal>
         <bill-detail ref="modalDetail" @ok="modalFormOk" @close="modalFormClose"></bill-detail>
         <bill-excel-iframe ref="billExcelIframe" @ok="modalFormOk" @close="modalFormClose"></bill-excel-iframe>
+
+        <!-- 查看附件弹窗 -->
+        <a-modal
+          v-model="attachmentModal.visible"
+          title="查看附件"
+          :footer="null"
+          width="760px"
+          style="top:60px;">
+          <a-spin :spinning="attachmentModal.loading">
+            <a-empty v-if="!attachmentModal.loading && attachmentModal.list.length === 0" description="暂无附件" />
+            <a-list v-else :data-source="attachmentModal.list" :grid="{ gutter: 16, column: 3 }">
+              <a-list-item slot="renderItem" slot-scope="item">
+                <a-card size="small" :bordered="true">
+                  <div style="text-align:center;">
+                    <template v-if="isImage(item.attachmentUrl)">
+                      <a :href="getFileUrl(item.attachmentUrl)" target="_blank">
+                        <img :src="getFileUrl(item.attachmentUrl)" style="width:100%;max-height:120px;object-fit:cover;cursor:pointer;" />
+                      </a>
+                    </template>
+                    <template v-else>
+                      <a-icon type="file" style="font-size:48px;color:#1890ff;" />
+                    </template>
+                  </div>
+                  <div style="margin-top:8px;font-size:12px;">
+                    <div style="color:#666;">类型：{{ item.attachmentType || '-' }}</div>
+                    <div style="margin-top:4px;">
+                      <a :href="getFileUrl(item.attachmentUrl)" target="_blank" download>下载</a>
+                    </div>
+                  </div>
+                </a-card>
+              </a-list-item>
+            </a-list>
+          </a-spin>
+        </a-modal>
+
         <!-- 扣减库存仓库选择弹窗 -->
         <a-modal
           title="扣减库存"
@@ -190,7 +227,7 @@
   import BillExcelIframe from '@/components/tools/BillExcelIframe'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import { BillListMixin } from './mixins/BillListMixin'
-  import { getAction, postAction } from '@/api/manage'
+  import { getAction, postAction, getFileAccessHttpUrl } from '@/api/manage'
   import ProductionAssignModal from './modules/ProductionAssignModal' // 分配排产弹窗
   import AssembleModal from './modules/AssembleModal' // 完工弹窗
   import QualityCheckModal from './modules/QualityCheckModal' // 质检完成弹窗
@@ -319,6 +356,11 @@
           }
         ],
         scroll: { x: 3310 },
+        attachmentModal: {
+          visible: false,
+          loading: false,
+          list: []
+        },
         url: {
           list: "/order/list",
           delete: "/order/delete",
@@ -400,6 +442,29 @@
       },
       handleEdit(record) {
         this.$refs.editModal.show(record)
+      },
+      handleViewAttachment(record) {
+        this.attachmentModal.visible = true
+        this.attachmentModal.list = []
+        this.attachmentModal.loading = true
+        getAction('/order/attachmentList', { orderId: record.id }).then(res => {
+          if (res && res.code === 200) {
+            this.attachmentModal.list = res.data || []
+          } else {
+            this.$message.warning((res && res.message) || '获取附件失败')
+          }
+        }).catch(() => {
+          this.$message.error('获取附件失败')
+        }).finally(() => {
+          this.attachmentModal.loading = false
+        })
+      },
+      getFileUrl(url) {
+        return getFileAccessHttpUrl(url)
+      },
+      isImage(url) {
+        if (!url) return false
+        return /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(url)
       },
       // 扣减库存
       handleDeductStock() {
