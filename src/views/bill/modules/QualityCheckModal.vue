@@ -33,10 +33,10 @@
             style="width: 100%">
           </j-date>
         </a-form-item>
-        <a-form-item label="上传附件" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <j-upload v-model="fileList" bizPath="dealer"></j-upload>
-          <div style="color: #999; margin-top: 8px;">支持多文件上传，可上传质检报告、检测照片等</div>
-        </a-form-item>
+<!--        <a-form-item label="上传附件" :labelCol="labelCol" :wrapperCol="wrapperCol">-->
+<!--          <j-upload v-model="fileList" bizPath="dealer"></j-upload>-->
+<!--          <div style="color: #999; margin-top: 8px;">支持多文件上传，可上传质检报告、检测照片等</div>-->
+<!--        </a-form-item>-->
       </a-form>
     </a-spin>
   </a-modal>
