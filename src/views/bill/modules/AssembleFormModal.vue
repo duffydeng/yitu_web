@@ -284,9 +284,9 @@
           rows: JSON.stringify(detailArr),
         }
       },
-      // hasBom=1 的行标红
+      // 商品类型为"组装件"的行标红
       getBomRowClass(record) {
-        return record && record.hasBom == 1 ? 'tr-has-bom' : ''
+        return record && record.mType === '组装件' ? 'tr-has-bom' : ''
       },
       // 获取选中行选中id
       getSelectRowId(selectedRowIds,id){
@@ -478,7 +478,10 @@
   }
 </script>
 <style scoped>
-  >>> .tr-has-bom .td {
-    color: #f5222d;
+  >>> .tr-has-bom .td,
+  >>> .tr-has-bom .td span,
+  >>> .tr-has-bom .td input,
+  >>> .tr-has-bom .td .ant-select-selection-selected-value {
+    color: #f5222d !important;
   }
 </style>
