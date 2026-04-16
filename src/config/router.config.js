@@ -30,6 +30,12 @@ export const asyncRouterMap = [
         name: 'DealerList',
         component: () => import('@/views/system/DealerList'),
         meta: { title: '经销商管理', keepAlive: true }
+      },
+      {
+        path: '/system/surveyEvaluation',
+        name: 'SurveyEvaluationList',
+        component: () => import('@/views/system/SurveyEvaluationList'),
+        meta: { title: '问卷调查', keepAlive: true }
       }
     ]
   },
