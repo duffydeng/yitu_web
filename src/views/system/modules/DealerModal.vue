@@ -120,7 +120,6 @@
 <script>
   import pick from 'lodash.pick'
   import { getAction, httpAction } from '@/api/manage'
-  import { validateDuplicateValue } from '@/utils/util'
 
   export default {
     name: "DealerModal",
@@ -233,14 +232,14 @@
               httpurl+=this.url.edit;
                method = 'put';
             }
-            let formData = Object.assign(this.model, values);
+            let formData = Object.assign({}, this.model, values);
             httpAction(httpurl, formData, method).then((res)=>{
               if(res && res.code === 200){
-                that.$message.success((res.data && res.data.message) || '保存成功');
+                that.$message.success(res.message || '保存成功');
                 that.$emit('ok');
                 that.close();
               }else{
-                that.$message.warning((res && res.data && res.data.message) || (res && res.message) || '保存失败');
+                that.$message.warning((res && res.message) || '保存失败');
               }
             }).finally(() => {
               that.confirmLoading = false;
@@ -261,13 +260,8 @@
             fieldVal: value,
             dataId: this.model.id
           }
-          validateDuplicateValue(this.url.checkLoginName, params).then((res) => {
-            if (res.success) {
-              callback()
-            } else {
-              callback(res.message)
-            }
-          })
+          callback()
+
         }
       },
       loadParentDealerList() {
