@@ -178,7 +178,7 @@
         @change="handleMaterialTableChange"
         rowKey="id"
         :rowSelection="{
-          type: 'radio',
+          type: addBatchMode ? 'checkbox' : 'radio',
           selectedRowKeys: selectedMaterialKeys,
           onChange: onMaterialSelectChange
         }">
@@ -274,6 +274,8 @@ export default {
       },
       selectedMaterialKeys: [],
       selectedMaterial: null,
+      selectedMaterials: [],
+      addBatchMode: false,
       // BOM明细弹窗相关
       bomDetailModalVisible: false,
       bomDetailLoading: false,
@@ -301,6 +303,7 @@ export default {
         materialList: "/material/list",
         bomList: "/bomList/list",
         detailAdd: "/orderDetail/add",
+        detailAddBatch: "/orderDetail/addBatch",
         detailUpdate: "/orderDetail/update",
         detailDelete: "/orderDetail/delete"
       }
@@ -362,21 +365,13 @@ export default {
       }
     },
     addDetailRow() {
-      const newData = {
-        id: Date.now(),
-        isNew: true,
-        materialId: undefined,
-        materialName: '',
-        barCode: '',
-        version: '',
-        categoryId: undefined,
-        categoryName: '',
-        qty: 0,
-        detailPrice: 0,
-        detailTotalPrice: 0
-      }
-      this.detailDataSource.push(newData)
-      this.editingKey = newData.id
+      this.addBatchMode = true
+      this.selectedMaterialKeys = []
+      this.selectedMaterials = []
+      this.materialSearchKey = ''
+      this.materialPagination.current = 1
+      this.materialModalVisible = true
+      this.searchMaterial()
     },
     deleteRow(index) {
       const record = this.detailDataSource[index]
@@ -431,18 +426,62 @@ export default {
     onMaterialSelectChange(selectedRowKeys, selectedRows) {
       this.selectedMaterialKeys = selectedRowKeys
       this.selectedMaterial = selectedRows[0]
+      this.selectedMaterials = selectedRows
     },
     handleMaterialOk() {
-      if (this.selectedMaterial && this.currentEditRecord) {
-        this.currentEditRecord.materialId = this.selectedMaterial.id
-        this.currentEditRecord.materialName = this.selectedMaterial.name
-        this.currentEditRecord.barCode = this.selectedMaterial.mBarCode
-        this.currentEditRecord.categoryId = this.selectedMaterial.categoryId
-        this.currentEditRecord.categoryName = this.selectedMaterial.categoryName
+      if (this.addBatchMode) {
+        // 批量新增明细
+        if (!this.selectedMaterials || this.selectedMaterials.length === 0) {
+          this.$message.warning('请至少选择一条物料！')
+          return
+        }
+        const details = this.selectedMaterials.map(m => ({
+          orderId: this.model.id,
+          materialId: m.id,
+          materialName: m.name,
+          barCode: m.mBarCode,
+          categoryId: m.categoryId,
+          categoryName: m.categoryName,
+          qty: 0,
+          detailPrice: 0,
+          detailTotalPrice: 0
+        }))
+        postAction(this.url.detailAddBatch, details).then(res => {
+          if (res.code === 200) {
+            this.$message.success('新增成功')
+            // 重新加载订单明细
+            getAction(this.url.info, { id: this.model.id }).then(infoRes => {
+              if (infoRes.code === 200 && infoRes.data && infoRes.data.info) {
+                const details = infoRes.data.info.orderDetails || []
+                this.detailDataSource = details.map(item => ({
+                  ...item,
+                  detailTotalPrice: item.detailTotalPrice || (item.qty * item.detailPrice).toFixed(2)
+                }))
+              }
+            })
+          } else {
+            this.$message.warning(res.message || '新增失败')
+          }
+        })
+        this.materialModalVisible = false
+        this.addBatchMode = false
+        this.selectedMaterialKeys = []
+        this.selectedMaterials = []
+        this.selectedMaterial = null
+      } else {
+        // 行内编辑选物料
+        if (this.selectedMaterial && this.currentEditRecord) {
+          this.currentEditRecord.materialId = this.selectedMaterial.id
+          this.currentEditRecord.materialName = this.selectedMaterial.name
+          this.currentEditRecord.barCode = this.selectedMaterial.mBarCode
+          this.currentEditRecord.categoryId = this.selectedMaterial.categoryId
+          this.currentEditRecord.categoryName = this.selectedMaterial.categoryName
+        }
+        this.materialModalVisible = false
+        this.selectedMaterialKeys = []
+        this.selectedMaterial = null
+        this.selectedMaterials = []
       }
-      this.materialModalVisible = false
-      this.selectedMaterialKeys = []
-      this.selectedMaterial = null
     },
     show(record) {
       this.visible = true

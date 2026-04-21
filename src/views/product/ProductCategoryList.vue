@@ -118,6 +118,13 @@
           <!-- 工具栏 -->
           <div style="margin-bottom:8px;">
             <a-button type="primary" icon="plus" size="small" @click="handleDetailAdd">新增</a-button>
+            <a-popconfirm
+              v-if="detailModal.productType === '分类'"
+              title="确定要删除该产品的所有关联明细吗?"
+              @confirm="handleDeleteAllRelation"
+            >
+              <a-button type="danger" icon="delete" size="small" style="margin-left:8px;">一键删除</a-button>
+            </a-popconfirm>
           </div>
           <a-table
             size="middle"
@@ -587,6 +594,22 @@
             }
           } else {
             this.$message.warning((res && res.data && res.data.message) || (res && res.message) || '保存失败')
+          }
+        })
+      },
+      // 一键删除分类关联明细
+      handleDeleteAllRelation () {
+        let productId = this.detailModal.productId
+        if (!productId) {
+          this.$message.warning('产品ID不存在！')
+          return
+        }
+        httpAction('/productMaterialRelation/deleteByProductId?productId=' + productId, {}, 'delete').then((res) => {
+          if (res && res.code === 200) {
+            this.$message.success('删除成功')
+            this.loadDetailData()
+          } else {
+            this.$message.warning((res && res.message) || '删除失败')
           }
         })
       },
