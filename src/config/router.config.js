@@ -36,6 +36,18 @@ export const asyncRouterMap = [
         name: 'SurveyEvaluationList',
         component: () => import('@/views/system/SurveyEvaluationList'),
         meta: { title: '问卷调查', keepAlive: true }
+      },
+      {
+        path: '/system/SurveyQuestionList',
+        name: 'SurveyQuestionList',
+        component: () => import('@/views/system/SurveyQuestionList'),
+        meta: { title: '问卷调查项定义', keepAlive: true }
+      },
+      {
+        path: '/system/surveyResponseList',
+        name: 'SurveyResponseList',
+        component: () => import('@/views/system/SurveyResponseList'),
+        meta: { title: '问卷答卷列表', keepAlive: true }
       }
     ]
   },
