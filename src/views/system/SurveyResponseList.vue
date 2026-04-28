@@ -19,17 +19,18 @@
               <a-col :md="6" :sm="24">
                 <a-form-item label="提交时间" :labelCol="labelCol" :wrapperCol="wrapperCol">
                   <a-range-picker
-                    v-model="queryParam.submitTimeRange"
+                    v-model="submitTimeRange"
                     format="YYYY-MM-DD"
                     :placeholder="['开始日期', '结束日期']"
                     style="width:100%"
+                    @change="onSubmitTimeChange"
                   />
                 </a-form-item>
               </a-col>
               <a-col :md="6" :sm="24">
                 <span style="float: left;overflow: hidden;" class="table-page-search-submitButtons">
                   <a-button type="primary" @click="searchQuery">查询</a-button>
-                  <a-button style="margin-left: 8px" @click="searchReset">重置</a-button>
+                  <a-button style="margin-left: 8px" @click="handleSearchReset">重置</a-button>
                 </span>
               </a-col>
             </a-row>
@@ -112,10 +113,12 @@
         labelCol: { span: 6 },
         wrapperCol: { span: 18 },
         scroll: { x: 1000 },
+        submitTimeRange: [],
         queryParam: {
           orderCode: '',
           userName: '',
-          submitTimeRange: []
+          submitTimeStart: '',
+          submitTimeEnd: ''
         },
         columns: [
           {
@@ -196,19 +199,19 @@
       formatDateTime(val) {
         if (!val) return '-'
         const str = typeof val === 'string' ? val : new Date(val).toISOString()
-        // 兼容 2026-04-22T06:59:22.000+0000 格式
         return str.replace('T', ' ').substring(0, 19)
       },
-      // 重写搜索，附带时间范围参数
-      getQueryParams() {
-        const params = Object.assign({}, this.queryParam)
-        const range = params.submitTimeRange
-        if (range && range.length === 2) {
-          params.submitTimeStart = range[0] ? range[0].format('YYYY-MM-DD') : ''
-          params.submitTimeEnd = range[1] ? range[1].format('YYYY-MM-DD') : ''
-        }
-        delete params.submitTimeRange
-        return params
+      onSubmitTimeChange(dates, dateStrings) {
+        this.queryParam.submitTimeStart = dateStrings[0] || ''
+        this.queryParam.submitTimeEnd = dateStrings[1] || ''
+      },
+      handleSearchReset() {
+        this.submitTimeRange = []
+        this.queryParam.orderCode = ''
+        this.queryParam.userName = ''
+        this.queryParam.submitTimeStart = ''
+        this.queryParam.submitTimeEnd = ''
+        this.loadData(1)
       }
     }
   }

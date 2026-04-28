@@ -32,12 +32,6 @@ export const asyncRouterMap = [
         meta: { title: '经销商管理', keepAlive: true }
       },
       {
-        path: '/system/surveyEvaluation',
-        name: 'SurveyEvaluationList',
-        component: () => import('@/views/system/SurveyEvaluationList'),
-        meta: { title: '问卷调查', keepAlive: true }
-      },
-      {
         path: '/system/SurveyQuestionList',
         name: 'SurveyQuestionList',
         component: () => import('@/views/system/SurveyQuestionList'),
@@ -48,6 +42,12 @@ export const asyncRouterMap = [
         name: 'SurveyResponseList',
         component: () => import('@/views/system/SurveyResponseList'),
         meta: { title: '问卷答卷列表', keepAlive: true }
+      },
+      {
+        path: '/system/miniappBanner',
+        name: 'MiniappBannerList',
+        component: () => import('@/views/system/MiniappBannerList'),
+        meta: { title: '小程序Banner管理', keepAlive: true }
       }
     ]
   },
