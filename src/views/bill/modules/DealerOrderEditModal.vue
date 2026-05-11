@@ -403,7 +403,7 @@ export default {
     searchMaterial() {
       this.materialLoading = true
       const params = {
-        pageNo: this.materialPagination.current,
+        currentPage: this.materialPagination.current,
         pageSize: this.materialPagination.pageSize,
         search: {}
       }
