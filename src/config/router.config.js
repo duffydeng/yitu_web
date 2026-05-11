@@ -48,6 +48,12 @@ export const asyncRouterMap = [
         name: 'MiniappBannerList',
         component: () => import('@/views/system/MiniappBannerList'),
         meta: { title: '小程序Banner管理', keepAlive: true }
+      },
+      {
+        path: '/bill/afterSales',
+        name: 'AfterSalesList',
+        component: () => import('@/views/bill/AfterSalesList'),
+        meta: { title: '售后单管理', keepAlive: true }
       }
     ]
   },
