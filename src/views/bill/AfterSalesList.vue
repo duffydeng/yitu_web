@@ -108,6 +108,8 @@
             </template>
             <span slot="action" slot-scope="text, record">
               <a @click="handleView(record)">查看详情</a>
+              <a-divider type="vertical" />
+              <a @click="handleEdit(record)">编辑</a>
             </span>
           </a-table>
         </div>
@@ -175,18 +177,60 @@
             </a>
           </div>
         </a-modal>
+
+        <!-- 编辑弹窗 -->
+        <a-modal
+          v-model="editModal.visible"
+          title="编辑售后单"
+          width="500px"
+          :confirmLoading="editModal.loading"
+          @ok="handleEditOk"
+          @cancel="editModal.visible = false"
+          okText="保存"
+          cancelText="取消">
+          <a-form :form="editForm" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+            <a-form-item label="售后单号">
+              <a-input :value="editModal.record && editModal.record.afterSalesNumber" :readOnly="true" />
+            </a-form-item>
+            <a-form-item label="状态">
+              <a-select v-decorator="['status', { rules: [{ required: true, message: '请选择状态' }] }]" placeholder="请选择状态">
+                <a-select-option value="待处理">待处理</a-select-option>
+                <a-select-option value="处理中">处理中</a-select-option>
+                <a-select-option value="待评价">待评价</a-select-option>
+                <a-select-option value="已完成">已完成</a-select-option>
+                <a-select-option value="已取消">已取消</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="处理备注">
+              <a-textarea
+                v-decorator="['handlerRemark']"
+                placeholder="请输入处理备注"
+                :rows="3" />
+            </a-form-item>
+            <a-form-item label="处理时间">
+              <j-date
+                v-decorator="['handledTime']"
+                placeholder="请选择处理时间"
+                :show-time="true"
+                date-format="YYYY-MM-DD HH:mm:ss"
+                style="width:100%" />
+            </a-form-item>
+          </a-form>
+        </a-modal>
       </a-card>
     </a-col>
   </a-row>
 </template>
 
 <script>
-import { getAction } from '@/api/manage'
+import { getAction, putAction } from '@/api/manage'
 import { JeecgListMixin } from '@/mixins/JeecgListMixin'
+import JDate from '@/components/jeecg/JDate'
 
 export default {
   name: 'AfterSalesList',
   mixins: [JeecgListMixin],
+  components: { JDate },
   data() {
     return {
       queryParam: {
@@ -266,8 +310,15 @@ export default {
         visible: false,
         images: []
       },
+      editModal: {
+        visible: false,
+        loading: false,
+        record: null
+      },
+      editForm: this.$form.createForm(this),
       url: {
-        list: '/afterSales/list'
+        list: '/afterSales/list',
+        update: '/afterSales/update'
       }
     }
   },
@@ -342,6 +393,40 @@ export default {
     previewImages(images) {
       this.previewModal.images = images.split(',').filter(Boolean)
       this.previewModal.visible = true
+    },
+    handleEdit(record) {
+      this.editModal.record = record
+      this.editModal.visible = true
+      this.$nextTick(() => {
+        this.editForm.setFieldsValue({
+          status: record.status,
+          handlerRemark: record.handlerRemark || '',
+          handledTime: record.handledTime || undefined
+        })
+      })
+    },
+    handleEditOk() {
+      this.editForm.validateFields((err, values) => {
+        if (err) return
+        this.editModal.loading = true
+        const params = {
+          id: this.editModal.record.id,
+          status: values.status,
+          handlerRemark: values.handlerRemark,
+          handledTime: values.handledTime
+        }
+        putAction(this.url.update, params).then(res => {
+          if (res && res.code === 200) {
+            this.$message.success('保存成功')
+            this.editModal.visible = false
+            this.loadData()
+          } else {
+            this.$message.warning((res && res.message) || '保存失败')
+          }
+        }).finally(() => {
+          this.editModal.loading = false
+        })
+      })
     }
   }
 }
