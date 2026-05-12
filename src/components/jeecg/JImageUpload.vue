@@ -137,10 +137,10 @@
           this.uploadGoOn=false
           return false;
         }
-        //验证文件大小
-        if(fileSize>this.sizeLimit/10) {
-          let parseSizeLimit = (this.sizeLimit/1024/1024/10).toFixed(2)
-          this.$message.warning('抱歉，图片大小不能超过' + parseSizeLimit + 'M');
+        //验证文件大小，限制最大10M
+        const maxSize = 10 * 1024 * 1024
+        if(fileSize > maxSize) {
+          this.$message.warning('抱歉，图片大小不能超过10M');
           this.uploadGoOn=false
           return false;
         }
