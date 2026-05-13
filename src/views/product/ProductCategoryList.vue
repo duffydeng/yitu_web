@@ -580,13 +580,17 @@
           this.$message.warning('请选择物料明细！')
           return
         }
-        let materialIds = rows.map(r => r.id).filter(id => id)
-        materialIds = Array.from(new Set(materialIds))
+        let barcodes = rows.map(r => r.mBarCode).filter(c => c)
+        barcodes = Array.from(new Set(barcodes))
+        if (barcodes.length === 0) {
+          this.$message.warning('所选物料暂无条码数据！')
+          return
+        }
         let params = {
           productId: productId,
-          materialIds: materialIds
+          barcodes: barcodes
         }
-        httpAction('/productMaterialRelation/add', params, 'post').then((res) => {
+        httpAction('/productMaterialRelation/batchAdd', params, 'post').then((res) => {
           if (res && res.code === 200) {
             this.$message.success((res.data && res.data.message) || '成功')
             if (this.detailAddMode) {
