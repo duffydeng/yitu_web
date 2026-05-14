@@ -77,6 +77,7 @@
 <!--          <a-button @click="handleDeductStock" type="primary" icon="minus-circle">扣减库存</a-button>-->
           <a-button v-if="isShowExcel && btnEnableList.indexOf(3)>-1" icon="download" @click="handleExport">导出</a-button>
           <a-button icon="file-excel" @click="downloadCustomOrder">下载定制单</a-button>
+          <a-button icon="qrcode" @click="downloadQrCode">下载二维码</a-button>
           <a-popover trigger="click" placement="right">
             <template slot="content">
               <a-checkbox-group @change="onColChange" v-model="settingDataIndex" :defaultValue="settingDataIndex">
@@ -581,6 +582,40 @@
             link.style.display = 'none'
             link.href = url
             link.setAttribute('download', '定制单_' + new Date().getTime() + '.xls')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+          }
+        }).catch(() => {
+          this.$message.error("下载失败")
+        })
+      },
+      // 下载二维码
+      downloadQrCode() {
+        if (!this.selectedRowKeys || this.selectedRowKeys.length === 0) {
+          this.$message.warning('请选择一条数据')
+          return
+        }
+        if (this.selectedRowKeys.length > 1) {
+          this.$message.warning('只能选择一条数据下载二维码')
+          return
+        }
+        const { downFile } = require('@/api/manage')
+        const param = { id: this.selectedRowKeys[0] }
+        downFile('/order/downloadQrCode', param).then((data) => {
+          if (!data) {
+            this.$message.warning("文件下载失败")
+            return
+          }
+          if (typeof window.navigator.msSaveBlob !== 'undefined') {
+            window.navigator.msSaveBlob(new Blob([data], { type: 'image/png' }), '二维码_' + new Date().getTime() + '.png')
+          } else {
+            let url = window.URL.createObjectURL(new Blob([data], { type: 'image/png' }))
+            let link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = url
+            link.setAttribute('download', '二维码_' + new Date().getTime() + '.png')
             document.body.appendChild(link)
             link.click()
             document.body.removeChild(link)
