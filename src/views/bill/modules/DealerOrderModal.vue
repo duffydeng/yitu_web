@@ -127,7 +127,13 @@
                   if(res.success){
                     this.model = Object.assign({}, res.data)
                     this.$nextTick(() => {
-                        this.form.setFieldsValue(pick(this.model, "orderNumber", "productName", "organizationName", "customerName", "orderStatus", "totalPrice", "deposit", "planFinishTime", "receivePerson", "receivePhone", "receiveAddressDetail"))
+                        const fieldValues = pick(this.model, "orderNumber", "productName", "organizationName", "customerName", "orderStatus", "totalPrice", "deposit", "planFinishTime", "receivePerson", "receivePhone", "receiveAddressDetail")
+                        if (fieldValues.planFinishTime) {
+                          const moment = require('moment')
+                          const m = moment(fieldValues.planFinishTime)
+                          fieldValues.planFinishTime = m.isValid() ? m.format('YYYY-MM-DD HH:mm:ss') : fieldValues.planFinishTime
+                        }
+                        this.form.setFieldsValue(fieldValues)
                     })
                   } else {
                       this.$message.warning(res.message)
@@ -146,6 +152,11 @@
 		            let httpurl = this.url.edit
 		            let method = "put"
 		            let formData = Object.assign(this.model, values)
+		            if (formData.planFinishTime) {
+		              const moment = require('moment')
+		              const m = moment(formData.planFinishTime)
+		              formData.planFinishTime = m.isValid() ? m.format('YYYY-MM-DD HH:mm:ss') : formData.planFinishTime
+		            }
 		
 		            httpAction(httpurl, formData, method).then((res) => {
 		              if (res.success) {

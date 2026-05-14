@@ -493,13 +493,21 @@ export default {
       getAction(this.url.info, { id: record.id }).then(res => {
         if (res.code === 200 && res.data && res.data.info) {
           this.model = res.data.info
+          if (this.model.customerId != null) {
+            this.model.customerId = String(this.model.customerId)
+          }
           this.$nextTick(() => {
-            this.form.setFieldsValue(pick(this.model, 
+            const fieldValues = pick(this.model, 
               'orderNumber', 'organizationName', 'customerName', 'customerPhone',
               'productName', 'orderStatus', 'totalPrice', 'deposit', 'deductStock',
               'planFinishTime', 'afterSaleContact', 'receivePerson', 'receivePhone',
               'receiveAddressDetail', 'expressNumber'
-            ))
+            )
+            if (fieldValues.planFinishTime) {
+              const m = this.$moment ? this.$moment(fieldValues.planFinishTime) : require('moment')(fieldValues.planFinishTime)
+              fieldValues.planFinishTime = m.isValid() ? m.format('YYYY-MM-DD HH:mm:ss') : fieldValues.planFinishTime
+            }
+            this.form.setFieldsValue(fieldValues)
           })
           
           if (res.data.info.orderDetails && res.data.info.orderDetails.length > 0) {
@@ -532,6 +540,10 @@ export default {
           }
           
           that.confirmLoading = true
+          if (values.planFinishTime) {
+            const m = require('moment')(values.planFinishTime)
+            values.planFinishTime = m.isValid() ? m.format('YYYY-MM-DD HH:mm:ss') : values.planFinishTime
+          }
           const formData = {
             ...this.model,
             ...values,
@@ -580,6 +592,10 @@ export default {
       this.form.validateFields((err, values) => {
         if (!err) {
           this.saveMainLoading = true
+          if (values.planFinishTime) {
+            const m = require('moment')(values.planFinishTime)
+            values.planFinishTime = m.isValid() ? m.format('YYYY-MM-DD HH:mm:ss') : values.planFinishTime
+          }
           const formData = { ...this.model, ...values }
           putAction(this.url.update, formData).then(res => {
             if (res.code === 200) {
