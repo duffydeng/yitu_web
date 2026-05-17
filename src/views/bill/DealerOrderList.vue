@@ -571,19 +571,21 @@
         console.log("下载定制单参数", param)
 
         // 调用下载接口
+        const orderNumber = this.selectionRows && this.selectionRows[0] && this.selectionRows[0].orderNumber
+        const fileName = '定制单_' + (orderNumber || new Date().getTime()) + '.xls'
         downFile('/order/downloadCustomOrder', param).then((data) => {
           if (!data) {
             this.$message.warning("文件下载失败")
             return
           }
           if (typeof window.navigator.msSaveBlob !== 'undefined') {
-            window.navigator.msSaveBlob(new Blob([data], {type: 'application/vnd.ms-excel'}), '定制单.xls')
+            window.navigator.msSaveBlob(new Blob([data], {type: 'application/vnd.ms-excel'}), fileName)
           } else {
             let url = window.URL.createObjectURL(new Blob([data], {type: 'application/vnd.ms-excel'}))
             let link = document.createElement('a')
             link.style.display = 'none'
             link.href = url
-            link.setAttribute('download', '定制单_' + new Date().getTime() + '.xls')
+            link.setAttribute('download', fileName)
             document.body.appendChild(link)
             link.click()
             document.body.removeChild(link)
