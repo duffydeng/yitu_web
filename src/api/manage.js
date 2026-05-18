@@ -158,6 +158,10 @@ export function getFileAccessHttpUrl(avatar,subStr) {
     return avatar;
   }else{
     if(avatar &&　avatar.length>0 && avatar.indexOf('[')==-1){
+      if(avatar.indexOf('/tencent') !== -1){
+        var tencentBase = 'https://bsbq-1395727345.cos.ap-guangzhou.myqcloud.com/erp'
+        return tencentBase + (avatar.startsWith('/') ? avatar : '/' + avatar)
+      }
       return window._CONFIG['domianURL'] + "/" + avatar;
     }
   }

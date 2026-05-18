@@ -463,11 +463,15 @@
       getFileUrl(url) {
         if (!url) return ''
         if (url.startsWith('http://') || url.startsWith('https://')) return url
+        if (url.includes('/tencent')) {
+          return 'https://bsbq-1395727345.cos.ap-guangzhou.myqcloud.com/erp' + (url.startsWith('/') ? url : '/' + url)
+        }
         return getFileAccessHttpUrl('systemConfig/static/' + url)
       },
       isImage(url) {
         if (!url) return false
-        return /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(url)
+        const cleanUrl = url.split('?')[0]
+        return /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(cleanUrl)
       },
       // 扣减库存
       handleDeductStock() {

@@ -130,7 +130,7 @@
             <a-descriptions-item label="图片" :span="2">
               <template v-if="detailModal.record.extField5">
                 <template v-for="(imgUrl, idx) in (detailModal.record.extField5 || '').split(',').filter(Boolean)">
-                  <a :key="idx" :href="imgUrl" target="_blank" style="margin-right:8px;">图片{{ idx + 1 }}</a>
+                  <a :key="idx" :href="getImgUrl(imgUrl)" target="_blank" style="margin-right:8px;">图片{{ idx + 1 }}</a>
                 </template>
               </template>
               <span v-else>-</span>
@@ -154,6 +154,7 @@
 
 <script>
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
+  import { getFileAccessHttpUrl } from '@/api/manage'
 
   export default {
     name: 'SurveyEvaluationList',
@@ -232,6 +233,10 @@
         if (!val) return '-'
         const str = typeof val === 'string' ? val : new Date(val).toISOString()
         return str.substring(0, 10)
+      },
+      getImgUrl(url) {
+        if (!url) return ''
+        return getFileAccessHttpUrl(url)
       }
     }
   }

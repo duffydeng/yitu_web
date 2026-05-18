@@ -145,16 +145,16 @@
                   <a
                     v-for="(img, idx) in detailModal.data.images.split(',')"
                     :key="idx"
-                    :href="img"
+                    :href="getImgUrl(img)"
                     target="_blank">
-                    <img :src="img" style="width:120px;height:90px;object-fit:cover;border:1px solid #eee;border-radius:4px;" />
+                    <img :src="getImgUrl(img)" style="width:120px;height:90px;object-fit:cover;border:1px solid #eee;border-radius:4px;" />
                   </a>
                 </div>
               </template>
               <template v-if="detailModal.data.materialImage">
                 <a-divider>商品图片</a-divider>
-                <a :href="detailModal.data.materialImage" target="_blank">
-                  <img :src="detailModal.data.materialImage" style="max-width:200px;max-height:150px;object-fit:cover;border-radius:4px;" />
+                <a :href="getImgUrl(detailModal.data.materialImage)" target="_blank">
+                  <img :src="getImgUrl(detailModal.data.materialImage)" style="max-width:200px;max-height:150px;object-fit:cover;border-radius:4px;" />
                 </a>
               </template>
             </template>
@@ -171,9 +171,9 @@
             <a
               v-for="(img, idx) in previewModal.images"
               :key="idx"
-              :href="img"
+              :href="getImgUrl(img)"
               target="_blank">
-              <img :src="img" style="width:150px;height:120px;object-fit:cover;border:1px solid #eee;border-radius:4px;cursor:pointer;" />
+              <img :src="getImgUrl(img)" style="width:150px;height:120px;object-fit:cover;border:1px solid #eee;border-radius:4px;cursor:pointer;" />
             </a>
           </div>
         </a-modal>
@@ -223,7 +223,7 @@
 </template>
 
 <script>
-import { getAction, putAction } from '@/api/manage'
+import { getAction, putAction, getFileAccessHttpUrl } from '@/api/manage'
 import { JeecgListMixin } from '@/mixins/JeecgListMixin'
 import JDate from '@/components/jeecg/JDate'
 
@@ -391,8 +391,12 @@ export default {
       })
     },
     previewImages(images) {
-      this.previewModal.images = images.split(',').filter(Boolean)
+      this.previewModal.images = images.split(',').filter(Boolean).map(img => this.getImgUrl(img))
       this.previewModal.visible = true
+    },
+    getImgUrl(url) {
+      if (!url) return ''
+      return getFileAccessHttpUrl(url)
     },
     handleEdit(record) {
       this.editModal.record = record
