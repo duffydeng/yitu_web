@@ -462,11 +462,7 @@
       },
       getFileUrl(url) {
         if (!url) return ''
-        if (url.startsWith('http://') || url.startsWith('https://')) return url
-        if (url.includes('/tencent')) {
-          return 'https://bsbq-1395727345.cos.ap-guangzhou.myqcloud.com/erp' + (url.startsWith('/') ? url : '/' + url)
-        }
-        return getFileAccessHttpUrl('systemConfig/static/' + url)
+        return getFileAccessHttpUrl(url)
       },
       isImage(url) {
         if (!url) return false

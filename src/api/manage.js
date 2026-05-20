@@ -160,7 +160,8 @@ export function getFileAccessHttpUrl(avatar,subStr) {
     if(avatar &&　avatar.length>0 && avatar.indexOf('[')==-1){
       if(avatar.indexOf('/tencent') !== -1){
         var tencentBase = 'https://bsbq-1395727345.cos.ap-guangzhou.myqcloud.com/erp'
-        return tencentBase + (avatar.startsWith('/') ? avatar : '/' + avatar)
+        var tencentPath = avatar.replace(/^.*?(\/tencent)/, '$1')
+        return tencentBase + tencentPath
       }
       return window._CONFIG['domianURL'] + "/" + avatar;
     }

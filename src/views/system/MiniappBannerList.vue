@@ -99,6 +99,7 @@
 <script>
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import MiniappBannerModal from './modules/MiniappBannerModal'
+  import { getFileAccessHttpUrl } from '@/api/manage'
 
   export default {
     name: 'MiniappBannerList',
@@ -189,11 +190,7 @@
       },
       getImageSrc(url) {
         if (!url) return ''
-        if (url.startsWith('http://') || url.startsWith('https://')) return url
-        if (url.indexOf('/tencent') !== -1) {
-          return 'https://bsbq-1395727345.cos.ap-guangzhou.myqcloud.com/erp' + (url.startsWith('/') ? url : '/' + url)
-        }
-        return (window._CONFIG && window._CONFIG['domianURL'] ? window._CONFIG['domianURL'] : '') + url
+        return getFileAccessHttpUrl(url)
       }
     }
   }
