@@ -50,6 +50,12 @@ export const asyncRouterMap = [
         meta: { title: '小程序Banner管理', keepAlive: true }
       },
       {
+        path: '/system/dict/type',
+        name: 'DictTypeList',
+        component: () => import('@/views/system/DictTypeList'),
+        meta: { title: '字典类型', keepAlive: true }
+      },
+      {
         path: '/bill/afterSales',
         name: 'AfterSalesList',
         component: () => import('@/views/bill/AfterSalesList'),
