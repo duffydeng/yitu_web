@@ -239,6 +239,9 @@
             scopedSlots: { customRender: 'ddStatusSlot' }
           },
           { title: '备注', align: "left", dataIndex: 'remark', width: 200 },
+          { title: '扩展字段1', align: "left", dataIndex: 'otherField1', width: 150 },
+          { title: '扩展字段2', align: "left", dataIndex: 'otherField2', width: 150 },
+          { title: '扩展字段3', align: "left", dataIndex: 'otherField3', width: 150 },
           { title: '创建时间', align: "left", dataIndex: 'createTime', width: 160 }
         ]
       }

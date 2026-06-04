@@ -53,6 +53,15 @@
               <a-select-option value="danger">危险</a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="扩展字段1">
+            <a-input placeholder="请输入扩展字段1" v-decorator="[ 'otherField1' ]" />
+          </a-form-item>
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="扩展字段2">
+            <a-input placeholder="请输入扩展字段2" v-decorator="[ 'otherField2' ]" />
+          </a-form-item>
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="扩展字段3">
+            <a-input placeholder="请输入扩展字段3" v-decorator="[ 'otherField3' ]" />
+          </a-form-item>
           <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="备注">
             <a-textarea :rows="2" placeholder="请输入备注" v-decorator="[ 'remark' ]" />
           </a-form-item>
@@ -118,7 +127,7 @@
         this.model = Object.assign({}, record);
         this.visible = true;
         this.$nextTick(() => {
-          this.form.setFieldsValue(pick(this.model, 'dictLabel', 'dictValue', 'dictSort', 'status', 'isDefault', 'listClass', 'remark'))
+          this.form.setFieldsValue(pick(this.model, 'dictLabel', 'dictValue', 'dictSort', 'status', 'isDefault', 'listClass', 'otherField1', 'otherField2', 'otherField3', 'remark'))
           autoJumpNextInput('dictDataModal')
         });
       },
