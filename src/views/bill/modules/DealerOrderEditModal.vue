@@ -80,14 +80,10 @@
               <a-select
                 v-decorator="['productionPerson']"
                 placeholder="请选择排产人"
-                showSearch
-                :filter-option="false"
-                @search="handleSearchUser"
-                @focus="handleUserFocus"
-                @popupScroll="handleUserScroll"
-                allowClear>
-                <a-select-option v-for="(username, index) in userList" :key="index" :value="username">
-                  {{ username }}
+                allowClear
+                @focus="initProductionWorkerList">
+                <a-select-option v-for="(item, index) in productionWorkerList" :key="index" :value="item.dictValue">
+                  {{ item.dictLabel }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -337,6 +333,8 @@ export default {
       userTotal: 0,
       userLoading: false,
       userSearchValue: '',
+      productionWorkerList: [],
+      productionWorkerLoaded: false,
       url: {
         info: "/order/info",
         update: "/order/update",
@@ -346,7 +344,8 @@ export default {
         detailAddBatch: "/orderDetail/addBatch",
         detailUpdate: "/orderDetail/update",
         detailDelete: "/orderDetail/delete",
-        userList: "/user/listAll"
+        userList: "/user/listAll",
+        dictData: "/system/dict/data/listByType"
       }
     }
   },
@@ -533,6 +532,8 @@ export default {
       this.userPage = 1
       this.userSearchValue = ''
       this.initUserList()
+      this.productionWorkerLoaded = false
+      this.initProductionWorkerList()
       this.confirmLoading = true
 
       getAction(this.url.info, { id: record.id }).then(res => {
@@ -699,6 +700,15 @@ export default {
         }
       }).finally(() => {
         this.userLoading = false
+      })
+    },
+    initProductionWorkerList() {
+      if (this.productionWorkerLoaded) return
+      getAction(this.url.dictData, { dictType: 'production_worker' }).then((res) => {
+        if (res.code === 200 && res.data) {
+          this.productionWorkerList = res.data.rows || []
+          this.productionWorkerLoaded = true
+        }
       })
     },
     close() {

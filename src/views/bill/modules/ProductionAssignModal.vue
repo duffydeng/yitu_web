@@ -10,17 +10,12 @@
     <a-spin :spinning="confirmLoading">
       <a-form :form="form" style="padding: 20px 10px;">
         <a-form-item label="排产人" :labelCol="labelCol" :wrapperCol="wrapperCol">
-          <a-select 
-            v-decorator="['productionPerson', validatorRules.productionPerson]" 
+          <a-select
+            v-decorator="['productionPerson', validatorRules.productionPerson]"
             placeholder="请选择排产人"
-            showSearch
-            :filter-option="false"
-            @search="handleSearchUser"
-            @focus="handleUserFocus"
-            @popupScroll="handleUserScroll"
-            optionFilterProp="children">
-            <a-select-option v-for="(username, index) in userList" :key="index" :value="username">
-              {{ username }}
+            @focus="initUserList">
+            <a-select-option v-for="(item, index) in userList" :key="index" :value="item.dictValue">
+              {{ item.dictLabel }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -73,7 +68,7 @@
         },
         url: {
           production: "/order/production",
-          userList: "/user/listAll"
+          dictData: "/system/dict/data/listByType"
         }
       }
     },
@@ -99,52 +94,14 @@
         this.form.resetFields()
         this.visible = true
         this.userList = []
-        this.userPage = 1
-        this.userSearchValue = ''
         this.initUserList()
       },
-      handleUserFocus() {
-        if (this.userList.length === 0) {
-          this.initUserList()
-        }
-      },
-      handleSearchUser(value) {
-        this.userSearchValue = value
-        this.userList = []
-        this.userPage = 1
-        this.initUserList()
-      },
-      handleUserScroll(e) {
-        const { target } = e
-        if (target.scrollTop + target.offsetHeight === target.scrollHeight) {
-          if (!this.userLoading && this.userList.length < this.userTotal) {
-            this.userPage++
-            this.initUserList(true)
+      initUserList() {
+        if (this.userList.length > 0) return
+        getAction(this.url.dictData, { dictType: 'production_worker' }).then((res) => {
+          if (res.code === 200 && res.data) {
+            this.userList = res.data.rows || []
           }
-        }
-      },
-      initUserList(isLoadMore = false){
-        if(this.userLoading) return
-        this.userLoading = true
-        let params = {
-          pageNo: this.userPage,
-          pageSize: this.userPageSize
-        }
-        if(this.userSearchValue) {
-          params.userName = this.userSearchValue
-        }
-        getAction(this.url.userList, params).then((res)=>{
-          if(res.code === 200 && res.data){
-            const rows = res.data.rows || []
-            if(isLoadMore) {
-              this.userList = [...this.userList, ...rows]
-            } else {
-              this.userList = rows
-            }
-            this.userTotal = res.data.total || rows.length
-          }
-        }).finally(() => {
-          this.userLoading = false
         })
       },
       handleOk() {
