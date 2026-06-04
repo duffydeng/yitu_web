@@ -23,6 +23,14 @@
                   <a-input placeholder="请输入产品名称" v-model="queryParam.productName"></a-input>
                 </a-form-item>
               </a-col>
+              <a-col :md="6" :sm="24">
+                <a-form-item label="激活状态" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                  <a-select placeholder="请选择激活状态" allow-clear v-model="queryParam.activateFlag">
+                    <a-select-option value="1">激活</a-select-option>
+                    <a-select-option value="0">未激活</a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
               <template v-if="toggleSearchStatus">
                 <a-col :md="6" :sm="24">
                   <a-form-item label="创建时间" :labelCol="labelCol" :wrapperCol="wrapperCol">
@@ -134,6 +142,10 @@
               <a-tag v-if="status == '50'" color="geekblue">运输中</a-tag>
               <a-tag v-if="status == '60'" color="green">已完成</a-tag>
               <a-tag v-if="status == '99'" color="grey">已取消</a-tag>
+            </template>
+            <template slot="activateFlagRender" slot-scope="text">
+              <a-tag v-if="text == '1'" color="green">激活</a-tag>
+              <a-tag v-else color="red">未激活</a-tag>
             </template>
             <a-table
               bordered
@@ -258,6 +270,7 @@
           productName: "",
           orderNumber: "",
           orderStatus: undefined,
+          activateFlag: undefined,
         },
         prefixNo: 'DLR',
         labelCol: {
@@ -287,7 +300,7 @@
           { title: '更新时间', dataIndex: 'updateTime'}
         ],
 				// 默认索引
-        defDataIndex:["action","orderNumber","orderStatus","organizationName","customerName","customerPhone","productName","totalPrice","deposit","deductStock","createTime","updateTime","planFinishTime","actualFinishTime","productionPerson","afterSaleContact","expressCompanyName","expressNumber","receivePerson","receivePhone","receiveAddressDetail","qualityInspector","qualityInspectionTime","deliveryTime","collectionTime","signOffTime"],
+        defDataIndex:["action","orderNumber","orderStatus","organizationName","customerName","customerPhone","productName","totalPrice","deposit","deductStock","createTime","updateTime","planFinishTime","actualFinishTime","productionPerson","afterSaleContact","expressCompanyName","expressNumber","receivePerson","receivePhone","receiveAddressDetail","qualityInspector","qualityInspectionTime","deliveryTime","collectionTime","signOffTime","activateFlag"],
         // 默认列
         defColumns: [
           {
@@ -328,6 +341,9 @@
             }
           },
           { title: '分配排产人', dataIndex: 'productionPerson',width:100, ellipsis:true},
+          { title: '激活状态', dataIndex: 'activateFlag', width: 100, align: "center",
+            scopedSlots: { customRender: 'activateFlagRender' }
+          },
           { title: '售后联系人', dataIndex: 'afterSaleContact',width:100, ellipsis:true},
           { title: '快递公司', dataIndex: 'expressCompanyName',width:120},
           { title: '快递单号', dataIndex: 'expressNumber',width:150},

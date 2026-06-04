@@ -76,6 +76,40 @@
             </a-form-item>
           </a-col>
           <a-col :span="8">
+            <a-form-item label="分配排产人" :labelCol="labelCol" :wrapperCol="wrapperCol">
+              <a-select
+                v-decorator="['productionPerson']"
+                placeholder="请选择排产人"
+                showSearch
+                :filter-option="false"
+                @search="handleSearchUser"
+                @focus="handleUserFocus"
+                @popupScroll="handleUserScroll"
+                allowClear>
+                <a-select-option v-for="(username, index) in userList" :key="index" :value="username">
+                  {{ username }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
+            <a-form-item label="质检人" :labelCol="labelCol" :wrapperCol="wrapperCol">
+              <a-select
+                v-decorator="['qualityInspector']"
+                placeholder="请选择质检人"
+                showSearch
+                :filter-option="false"
+                @search="handleSearchUser"
+                @focus="handleUserFocus"
+                @popupScroll="handleUserScroll"
+                allowClear>
+                <a-select-option v-for="(username, index) in userList" :key="index" :value="username">
+                  {{ username }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
             <a-form-item label="售后联系人" :labelCol="labelCol" :wrapperCol="wrapperCol">
               <a-input v-decorator="['afterSaleContact']" placeholder="请输入售后联系人"></a-input>
             </a-form-item>
@@ -297,6 +331,12 @@ export default {
         pageSize: 10,
         total: 0
       },
+      userList: [],
+      userPage: 1,
+      userPageSize: 20,
+      userTotal: 0,
+      userLoading: false,
+      userSearchValue: '',
       url: {
         info: "/order/info",
         update: "/order/update",
@@ -305,7 +345,8 @@ export default {
         detailAdd: "/orderDetail/add",
         detailAddBatch: "/orderDetail/addBatch",
         detailUpdate: "/orderDetail/update",
-        detailDelete: "/orderDetail/delete"
+        detailDelete: "/orderDetail/delete",
+        userList: "/user/listAll"
       }
     }
   },
@@ -488,8 +529,12 @@ export default {
       this.form.resetFields()
       this.detailDataSource = []
       this.editingKey = ''
+      this.userList = []
+      this.userPage = 1
+      this.userSearchValue = ''
+      this.initUserList()
       this.confirmLoading = true
-      
+
       getAction(this.url.info, { id: record.id }).then(res => {
         if (res.code === 200 && res.data && res.data.info) {
           this.model = res.data.info
@@ -497,11 +542,11 @@ export default {
             this.model.customerId = String(this.model.customerId)
           }
           this.$nextTick(() => {
-            const fieldValues = pick(this.model, 
+            const fieldValues = pick(this.model,
               'orderNumber', 'organizationName', 'customerName', 'customerPhone',
               'productName', 'orderStatus', 'totalPrice', 'deposit', 'deductStock',
               'planFinishTime', 'afterSaleContact', 'receivePerson', 'receivePhone',
-              'receiveAddressDetail', 'expressNumber'
+              'receiveAddressDetail', 'expressNumber', 'productionPerson', 'qualityInspector'
             )
             if (fieldValues.planFinishTime) {
               const m = this.$moment ? this.$moment(fieldValues.planFinishTime) : require('moment')(fieldValues.planFinishTime)
@@ -610,6 +655,50 @@ export default {
             this.saveMainLoading = false
           })
         }
+      })
+    },
+    handleUserFocus() {
+      if (this.userList.length === 0) {
+        this.initUserList()
+      }
+    },
+    handleSearchUser(value) {
+      this.userSearchValue = value
+      this.userList = []
+      this.userPage = 1
+      this.initUserList()
+    },
+    handleUserScroll(e) {
+      const { target } = e
+      if (target.scrollTop + target.offsetHeight === target.scrollHeight) {
+        if (!this.userLoading && this.userList.length < this.userTotal) {
+          this.userPage++
+          this.initUserList(true)
+        }
+      }
+    },
+    initUserList(isLoadMore = false) {
+      if (this.userLoading) return
+      this.userLoading = true
+      const params = {
+        pageNo: this.userPage,
+        pageSize: this.userPageSize
+      }
+      if (this.userSearchValue) {
+        params.userName = this.userSearchValue
+      }
+      getAction(this.url.userList, params).then((res) => {
+        if (res.code === 200 && res.data) {
+          const rows = res.data.rows || []
+          if (isLoadMore) {
+            this.userList = [...this.userList, ...rows]
+          } else {
+            this.userList = rows
+          }
+          this.userTotal = res.data.total || rows.length
+        }
+      }).finally(() => {
+        this.userLoading = false
       })
     },
     close() {
