@@ -60,6 +60,18 @@ export const asyncRouterMap = [
         name: 'AfterSalesList',
         component: () => import('@/views/bill/AfterSalesList'),
         meta: { title: '售后单管理', keepAlive: true }
+      },
+      {
+        path: '/report/productionReport',
+        name: 'ProductionReport',
+        component: () => import('@/views/report/ProductionReport'),
+        meta: { title: '生产报表', keepAlive: true }
+      },
+      {
+        path: '/report/salesReport',
+        name: 'SalesReport',
+        component: () => import('@/views/report/SalesReport'),
+        meta: { title: '销售报表', keepAlive: true }
       }
     ]
   },
