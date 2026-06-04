@@ -99,6 +99,28 @@
       </a-col>
     </a-row>
     <a-row :gutter="24">
+      <a-col :sm="24" :md="24" :xl="24" :style="{ paddingRight: '0px',marginBottom: '6px' }">
+        <a-card :loading="loading" :bordered="false" :body-style="{padding: '8px 16px'}">
+          <div style="text-align: center; font-size: 14px;">
+            <template v-if="stockWarningStat.warningCount > 0">
+              <a-badge status="warning" />
+              <a style="cursor: pointer; color: #faad14;" @click="goStockWarning">
+                库存预警：共 {{ stockWarningStat.totalCount }} 种商品，
+                <span style="font-weight: bold;">{{ stockWarningStat.warningCount }}</span> 种库存异常
+                <a-tooltip title="库存低于最低安全库存或高于最高安全库存的商品">
+                  <a-icon type="question-circle" style="margin-left: 4px;" />
+                </a-tooltip>
+              </a>
+            </template>
+            <template v-else>
+              <a-badge status="success" />
+              <span style="color: #52c41a;">库存状态正常（共 {{ stockWarningStat.totalCount }} 种商品）</span>
+            </template>
+          </div>
+        </a-card>
+      </a-col>
+    </a-row>
+    <a-row :gutter="24">
       <a-col :sm="24" :md="12" :xl="8" :style="{ paddingRight: '0px',marginBottom: '12px' }">
         <a-card :loading="loading" :bordered="false" :body-style="{paddingRight: '5'}" data-step="4" data-title="销售统计"
                 data-intro="统计往前6个月每月销售的总金额">
@@ -187,6 +209,10 @@
         buyPriceData: [],
         salePriceData: [],
         retailPriceData: [],
+        stockWarningStat: {
+          totalCount: 0,
+          warningCount: 0
+        },
         visitFields:['ip','visit'],
         visitInfo:[],
         hasExpire: false,
@@ -222,6 +248,9 @@
             this.buyPriceData = res.data.buyPriceList
             this.salePriceData = res.data.salePriceList
             this.retailPriceData = res.data.retailPriceList
+            if(res.data.stockWarningStat) {
+              this.stockWarningStat = res.data.stockWarningStat
+            }
           }
         })
         getPlatformConfigByKey({"platformKey": "pay_fee_url"}).then((res)=> {
@@ -276,6 +305,9 @@
         } else {
           return false
         }
+      },
+      goStockWarning() {
+        this.$router.push('/report/stock_warning_report')
       }
     }
   }
