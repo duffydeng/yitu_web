@@ -11,6 +11,7 @@
             bordered
             rowKey="id"
             :columns="columns"
+            :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="ipagination"
             :loading="loading"

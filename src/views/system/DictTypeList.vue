@@ -46,6 +46,7 @@
             bordered
             rowKey="dictId"
             :columns="columns"
+            :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="ipagination"
             :scroll="scroll"
@@ -117,6 +118,7 @@
           bordered
           rowKey="dictCode"
           :columns="dictDataColumns"
+          :components="handleDrag(dictDataColumns)"
           :dataSource="dictDataList"
           :pagination="dictDataPagination"
           :loading="dictDataLoading"

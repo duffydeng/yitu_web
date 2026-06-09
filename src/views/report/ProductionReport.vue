@@ -39,6 +39,7 @@
             size="middle"
             rowKey="id"
             :columns="columns"
+            :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="false"
             :scroll="{x: 1000}"
@@ -65,9 +66,13 @@
 <script>
   import { getAction, downFilePost } from '@/api/manage'
   import { formatDate, getNowFormatStr } from '@/utils/util'
+  import VueDraggableResizable from 'vue-draggable-resizable'
 
   export default {
     name: 'ProductionReport',
+    components: {
+      VueDraggableResizable
+    },
     data() {
       return {
         cardStyle: { margin: '-24px -24px 0px' },
@@ -99,6 +104,41 @@
       this.searchQuery()
     },
     methods: {
+      handleDrag(column){
+        return {
+          header: {
+            cell: (h, props, children) => {
+              const { key, ...restProps } = props
+              const col = column.find((col) => {
+                const k = col.dataIndex || col.key
+                return k === key
+              })
+              if (!col || !col.width) {
+                return h('th', { ...restProps }, children)
+              }
+              const dragProps = {
+                key: col.dataIndex || col.key,
+                class: 'table-draggable-handle',
+                attrs: {
+                  w: 10,
+                  x: col.width,
+                  z: 1,
+                  axis: 'x',
+                  draggable: true,
+                  resizable: false,
+                },
+                on: {
+                  dragging: (x, y) => {
+                    col.width = Math.max(x, 1)
+                  },
+                },
+              }
+              const drag = h(VueDraggableResizable, { ...dragProps })
+              return h('th', { ...restProps, class: 'resize-table-th' }, [children, drag])
+            },
+          }
+        }
+      },
       searchQuery() {
         this.currentPage = 1
         this.loadData()

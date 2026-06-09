@@ -51,6 +51,7 @@
             rowKey="id"
             :pagination="false"
             :columns="columns"
+            :components="handleDrag(columns)"
             :dataSource="dataSource"
             :loading="loading">
             <span slot="action" slot-scope="text, record">

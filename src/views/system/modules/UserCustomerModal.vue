@@ -21,6 +21,7 @@
           size="small"
           rowKey="id"
           :columns="columns"
+          :components="handleDrag(columns)"
           :dataSource="dataSource"
           :pagination="false"
           :customRow="null"
@@ -35,8 +36,12 @@
   import {mixinDevice} from '@/utils/mixin'
   import {addUserBusiness,editUserBusiness,checkUserBusiness} from '@/api/api'
   import {getAction} from '../../../api/manage'
+  import VueDraggableResizable from 'vue-draggable-resizable'
   export default {
     name: "UserCustomerModal",
+    components: {
+      VueDraggableResizable
+    },
     mixins: [mixinDevice],
     data () {
       return {
@@ -62,6 +67,41 @@
     created () {
     },
     methods: {
+      handleDrag(column){
+        return {
+          header: {
+            cell: (h, props, children) => {
+              const { key, ...restProps } = props
+              const col = column.find((col) => {
+                const k = col.dataIndex || col.key
+                return k === key
+              })
+              if (!col || !col.width) {
+                return h('th', { ...restProps }, children)
+              }
+              const dragProps = {
+                key: col.dataIndex || col.key,
+                class: 'table-draggable-handle',
+                attrs: {
+                  w: 10,
+                  x: col.width,
+                  z: 1,
+                  axis: 'x',
+                  draggable: true,
+                  resizable: false,
+                },
+                on: {
+                  dragging: (x, y) => {
+                    col.width = Math.max(x, 1)
+                  },
+                },
+              }
+              const drag = h(VueDraggableResizable, { ...dragProps })
+              return h('th', { ...restProps, class: 'resize-table-th' }, [children, drag])
+            },
+          }
+        }
+      },
       edit (record) {
         this.form.resetFields();
         this.model = Object.assign({}, {});

@@ -118,6 +118,7 @@
             bordered
             rowKey="id"
             :columns="columns"
+            :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="ipagination"
             :scroll="scroll"
@@ -130,7 +131,7 @@
             <span slot="action" slot-scope="text, record">
               <a @click="handleEdit(record)">编辑</a>
               <a-divider type="vertical" />
-              <a @click="handleViewAttachment(record)">查看附件</a>
+              <a @click="handleViewAttachment(record)">完工图 </a>
             </span>
 			<template slot="customRenderStatus" slot-scope="status">
               <a-tag v-if="status == '0'" color="blue">已创建</a-tag>
