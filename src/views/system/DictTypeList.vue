@@ -49,7 +49,7 @@
             :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="ipagination"
-            :scroll="scroll"
+            :scroll="{ x: 1110 }"
             :loading="loading"
             :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
             @change="handleTableChange">
@@ -120,6 +120,7 @@
           :columns="dictDataColumns"
           :components="handleDrag(dictDataColumns)"
           :dataSource="dictDataList"
+          :scroll="{ x: 1520 }"
           :pagination="dictDataPagination"
           :loading="dictDataLoading"
           :rowSelection="{selectedRowKeys: dictDataSelectedKeys, onChange: onDictDataSelectChange}"
