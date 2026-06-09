@@ -92,13 +92,6 @@
           </a-row>
           <a-row class="form-row" :gutter="24">
             <a-col :span="24">
-              <a-form-item :labelCol="labelColSpan" :wrapperCol="wrapperColSpan" label="经销商特色">
-                <a-textarea :rows="3" placeholder="请输入经销商特色" v-decorator.trim="[ 'feature' ]" />
-              </a-form-item>
-            </a-col>
-          </a-row>
-          <a-row class="form-row" :gutter="24">
-            <a-col :span="24">
               <a-form-item :labelCol="labelColSpan" :wrapperCol="wrapperColSpan" label="描述信息">
                 <a-textarea :rows="3" placeholder="请输入描述信息" v-decorator.trim="[ 'description' ]" />
               </a-form-item>
@@ -111,6 +104,84 @@
               </a-form-item>
             </a-col>
           </a-row>
+
+          <!-- 基本信息区域 -->
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24">
+              <a-divider>基本信息</a-divider>
+            </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24">
+              <a-form-item :labelCol="labelColSpan" :wrapperCol="wrapperColSpan" label="常住地址">
+                <a-textarea :rows="2" placeholder="请输入常住地址" v-decorator.trim="[ 'permanentAddress', validatorRules.permanentAddress]" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24">
+              <a-form-item :labelCol="labelColSpan" :wrapperCol="wrapperColSpan" label="代理商公司信息">
+                <a-textarea :rows="2" placeholder="请输入代理商公司信息" v-decorator.trim="[ 'companyInfo' ]" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <!-- 文件上传区域 -->
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24">
+              <a-divider>文件上传</a-divider>
+            </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24/2">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="资质档案">
+                <j-image-upload v-model="qualificationFileUrl" bizPath="dealer" text="上传资质档案" :isMultiple="true"></j-image-upload>
+              </a-form-item>
+            </a-col>
+            <a-col :span="24/2">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="身份证">
+                <j-image-upload v-model="idCardUrl" bizPath="dealer" text="上传身份证" :isMultiple="true"></j-image-upload>
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24/2">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="个人形象照">
+                <j-image-upload v-model="personalPhotoUrl" bizPath="dealer" text="上传个人形象照" :isMultiple="true"></j-image-upload>
+              </a-form-item>
+            </a-col>
+            <a-col :span="24/2">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="附件">
+                <j-image-upload v-model="attachmentFileList" bizPath="dealer" text="上传附件" :isMultiple="true"></j-image-upload>
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <!-- 拓展信息区域 -->
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24">
+              <a-divider>拓展信息</a-divider>
+            </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24/2">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="拓展字段1">
+                <a-input placeholder="请输入拓展字段1" v-decorator.trim="[ 'extField1' ]" />
+              </a-form-item>
+            </a-col>
+            <a-col :span="24/2">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="拓展字段2">
+                <a-input placeholder="请输入拓展字段2" v-decorator.trim="[ 'extField2' ]" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-row class="form-row" :gutter="24">
+            <a-col :span="24/2">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="拓展字段3">
+                <a-input placeholder="请输入拓展字段3" v-decorator.trim="[ 'extField3' ]" />
+              </a-form-item>
+            </a-col>
+          </a-row>
         </a-form>
       </a-spin>
     </a-modal>
@@ -120,9 +191,13 @@
 <script>
   import pick from 'lodash.pick'
   import { getAction, httpAction } from '@/api/manage'
+  import JImageUpload from '@/components/jeecg/JImageUpload'
 
   export default {
     name: "DealerModal",
+    components: {
+      JImageUpload
+    },
     data () {
       return {
         title:"操作",
@@ -147,6 +222,11 @@
         },
         confirmLoading: false,
         form: this.$form.createForm(this),
+        // 文件上传路径
+        qualificationFileUrl: '',
+        idCardUrl: '',
+        personalPhotoUrl: '',
+        attachmentFileList: '',
         validatorRules: {
           name: {
             rules: [
@@ -187,6 +267,12 @@
             rules: [
               { required: true, message: '请选择是否二级经销商!' }
             ]
+          },
+          permanentAddress: {
+            rules: [
+              { required: true, message: '请输入常住地址!' },
+              { max: 500, message: '长度不能超过500个字符!' }
+            ]
           }
         },
         parentDealerList: [],
@@ -208,9 +294,14 @@
         this.form.resetFields();
         this.model = Object.assign({}, record);
         this.visible = true;
+        this.qualificationFileUrl = this.model.qualificationFile || '';
+        this.idCardUrl = this.model.idCard || '';
+        this.personalPhotoUrl = this.model.personalPhoto || '';
+        this.attachmentFileList = this.model.attachment || '';
         this.$nextTick(() => {
           this.form.setFieldsValue(pick(this.model,'name','loginName','password','phonenum','commissionDecimal',
-            'status','description','remark','feature','weixinOpenId','parentId','twoLevelDealerIs'));
+            'status','description','remark','weixinOpenId','parentId','twoLevelDealerIs',
+            'permanentAddress','companyInfo','extField1','extField2','extField3'));
         });
       },
       close () {
@@ -233,6 +324,10 @@
                method = 'put';
             }
             let formData = Object.assign({}, this.model, values);
+            formData.qualificationFile = this.qualificationFileUrl || this.model.qualificationFile || '';
+            formData.idCard = this.idCardUrl || this.model.idCard || '';
+            formData.personalPhoto = this.personalPhotoUrl || this.model.personalPhoto || '';
+            formData.attachment = this.attachmentFileList || this.model.attachment || '';
             httpAction(httpurl, formData, method).then((res)=>{
               if(res && res.code === 200){
                 that.$message.success(res.message || '保存成功');

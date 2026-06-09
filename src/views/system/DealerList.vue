@@ -51,6 +51,11 @@
                     <a-input placeholder="请输入登录用户名查询" v-model="queryParam.loginName"></a-input>
                   </a-form-item>
                 </a-col>
+                <a-col :md="6" :sm="24">
+                  <a-form-item label="常住地址" :labelCol="labelCol" :wrapperCol="wrapperCol">
+                    <a-input placeholder="请输入常住地址查询" v-model="queryParam.permanentAddress"></a-input>
+                  </a-form-item>
+                </a-col>
               </a-row>
             </template>
           </a-form>
@@ -181,7 +186,11 @@
           { title: '是否二级经销商', dataIndex: 'twoLevelDealerIs', width: 120, align:"center",
             scopedSlots: { customRender: 'customRenderTwoLevel' }
           },
-          { title: '经销商特色', dataIndex: 'feature', width: 200, ellipsis: true, align:"left"},
+          { title: '常住地址', dataIndex: 'permanentAddress', width: 200, ellipsis: true, align:"left"},
+          { title: '公司信息', dataIndex: 'companyInfo', width: 200, ellipsis: true, align:"left"},
+          { title: '拓展字段1', dataIndex: 'extField1', width: 120, ellipsis: true, align:"left"},
+          { title: '拓展字段2', dataIndex: 'extField2', width: 120, ellipsis: true, align:"left"},
+          { title: '拓展字段3', dataIndex: 'extField3', width: 120, ellipsis: true, align:"left"},
           { title: '创建时间', dataIndex: 'createTime', width: 150, align:"center"}
         ],
         url: {

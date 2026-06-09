@@ -101,9 +101,7 @@
         dateFormat:"YYYY-MM-DD",
         validatorRules:{
           loginName:{
-            rules: [{
-              required: true, message: '请输入登录名称!'
-            }]
+            rules: []
           },
           username:{
             rules: [{
