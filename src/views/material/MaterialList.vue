@@ -125,7 +125,7 @@
           <a-button v-if="btnEnableList.indexOf(3)>-1" @click="handleExportXls('商品信息')" icon="download">导出</a-button>
           <a-button v-if="btnEnableList.indexOf(1)>-1" @click="batchEdit()" icon="edit">批量编辑</a-button>
           <a-button v-if="btnEnableList.indexOf(1)>-1" @click="batchSetMaterialCurrentStock()" icon="stock">修正库存</a-button>
-          <a-button v-if="btnEnableList.indexOf(1)>-1" @click="batchSetMaterialCurrentUnitPrice()" icon="fund">修正成本</a-button>
+          <a-button v-if="btnEnableList.indexOf(3)>-1" @click="handleExportLabel()" icon="tag">打印标签</a-button>
           <a-popover trigger="click" placement="right">
             <template slot="content">
               <a-checkbox-group @change="onColChange" v-model="settingDataIndex" :defaultValue="settingDataIndex">
@@ -221,7 +221,7 @@
   import ImportFileModal from '@/components/tools/ImportFileModal'
   import BatchSetInfoModal from './modules/BatchSetInfoModal'
   import { queryMaterialCategoryTreeList } from '@/api/api'
-  import { postAction, getFileAccessHttpUrl } from '@/api/manage'
+  import { postAction, getAction, downFile, getFileAccessHttpUrl } from '@/api/manage'
   import { getMpListShort } from '@/utils/util'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import JEllipsis from '@/components/jeecg/JEllipsis'
@@ -346,6 +346,7 @@
           batchSetStatusUrl: "/material/batchSetStatus",
           batchSetMaterialCurrentStockUrl: "/material/batchSetMaterialCurrentStock",
           batchSetMaterialCurrentUnitPriceUrl: "/material/batchSetMaterialCurrentUnitPrice",
+          exportLabelUrl: "/material/exportLabel",
         }
       }
     },
@@ -521,6 +522,34 @@
             }
           });
         }
+      },
+      handleExportLabel() {
+        let param = { ...this.queryParam };
+        // categoryIds 如果是数组，转成逗号分隔字符串
+        if (Array.isArray(param.categoryIds)) {
+          param.categoryIds = param.categoryIds.join(',');
+        }
+        downFile(this.url.exportLabelUrl, param).then((data) => {
+          if (!data) {
+            this.$message.warning('文件下载失败');
+            return;
+          }
+          if (typeof window.navigator.msSaveBlob !== 'undefined') {
+            window.navigator.msSaveBlob(new Blob([data], { type: 'application/vnd.ms-excel' }), '商品标签.xls');
+          } else {
+            let url = window.URL.createObjectURL(new Blob([data], { type: 'application/vnd.ms-excel' }));
+            let link = document.createElement('a');
+            link.style.display = 'none';
+            link.href = url;
+            link.setAttribute('download', '商品标签.xls');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          }
+        }).catch(() => {
+          this.$message.warning('文件下载失败');
+        });
       },
       batchEdit() {
         if (this.selectedRowKeys.length <= 0) {
