@@ -8,12 +8,12 @@
             <a-row :gutter="24">
               <a-col :md="6" :sm="24">
                 <a-form-item label="开始日期" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                  <a-date-picker style="width: 100%" v-model="queryParam.beginTime" placeholder="请选择开始日期" />
+                  <a-date-picker style="width: 100%" v-model="queryParam.beginTime" format="YYYY-MM-DD" placeholder="请选择开始日期" />
                 </a-form-item>
               </a-col>
               <a-col :md="6" :sm="24">
                 <a-form-item label="结束日期" :labelCol="labelCol" :wrapperCol="wrapperCol">
-                  <a-date-picker style="width: 100%" v-model="queryParam.endTime" placeholder="请选择结束日期" />
+                  <a-date-picker style="width: 100%" v-model="queryParam.endTime" format="YYYY-MM-DD" placeholder="请选择结束日期" />
                 </a-form-item>
               </a-col>
               <a-col :md="6" :sm="24">
@@ -60,8 +60,9 @@
 
 <script>
   import { getAction, downFilePost } from '@/api/manage'
-  import { formatDate, getNowFormatStr } from '@/utils/util'
+  import { getNowFormatStr, getFormatDate } from '@/utils/util'
   import VueDraggableResizable from 'vue-draggable-resizable'
+  import moment from 'moment'
 
   export default {
     name: 'SalesReport',
@@ -80,8 +81,8 @@
         currentPage: 1,
         pageSizeOptions: ['10', '20', '30', '50'],
         queryParam: {
-          beginTime: '',
-          endTime: ''
+          beginTime: moment(getFormatDate()),
+          endTime: moment(getFormatDate())
         },
         columns: [
           { title: '序号', dataIndex: 'rowIndex', width: 60, align: 'center',
@@ -147,8 +148,10 @@
       loadData() {
         this.loading = true
         let params = {
-          beginTime: formatDate(this.queryParam.beginTime),
-          endTime: formatDate(this.queryParam.endTime)
+          beginTime: this.queryParam.beginTime ? this.queryParam.beginTime.format('YYYY-MM-DD') : '',
+          endTime: this.queryParam.endTime ? this.queryParam.endTime.format('YYYY-MM-DD') : '',
+          currentPage: this.currentPage,
+          pageSize: this.pageSize
         }
         getAction('/depotItem/salesReport', params).then(res => {
           if (res.code === 200) {
@@ -157,16 +160,20 @@
           } else {
             this.$message.error(res.data || '获取数据失败')
           }
+        }).catch(() => {
+          this.$message.error('网络错误，获取数据失败')
         }).finally(() => {
           this.loading = false
         })
       },
       pageChange(page) {
         this.currentPage = page
+        this.loadData()
       },
       pageSizeChange(current, size) {
         this.pageSize = size
         this.currentPage = 1
+        this.loadData()
       },
       exportExcel() {
         if (!this.dataSource.length) {
@@ -179,7 +186,7 @@
           let ds = this.dataSource[i]
           list.push([ds.productName, ds.totalQuantity, ds.dealerBreakdown, ds.totalAmount ? ds.totalAmount.toFixed(2) : '0.00'])
         }
-        let tip = '日期区间：' + formatDate(this.queryParam.beginTime) + '~' + formatDate(this.queryParam.endTime)
+        let tip = '日期区间：' + this.queryParam.beginTime.format('YYYY-MM-DD') + '~' + this.queryParam.endTime.format('YYYY-MM-DD')
         this.handleExportXlsPost('销售报表', '销售报表', head, tip, list)
       },
       handleExportXlsPost(fileName, title, head, tip, list) {
