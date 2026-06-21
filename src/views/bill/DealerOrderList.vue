@@ -630,13 +630,13 @@
             return
           }
           if (typeof window.navigator.msSaveBlob !== 'undefined') {
-            window.navigator.msSaveBlob(new Blob([data], { type: 'image/png' }), '二维码_' + new Date().getTime() + '.png')
+            window.navigator.msSaveBlob(new Blob([data], { type: 'application/pdf' }), '二维码_' + new Date().getTime() + '.pdf')
           } else {
-            let url = window.URL.createObjectURL(new Blob([data], { type: 'image/png' }))
+            let url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
             let link = document.createElement('a')
             link.style.display = 'none'
             link.href = url
-            link.setAttribute('download', '二维码_' + new Date().getTime() + '.png')
+            link.setAttribute('download', '二维码_' + new Date().getTime() + '.pdf')
             document.body.appendChild(link)
             link.click()
             document.body.removeChild(link)
