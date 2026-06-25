@@ -479,7 +479,8 @@
       },
       getFileUrl(url) {
         if (!url) return ''
-        return getFileAccessHttpUrl(url)
+        // 附件存储的是相对路径，需要拼接 systemConfig/static/ 前缀
+        return getFileAccessHttpUrl('systemConfig/static/' + url)
       },
       isImage(url) {
         if (!url) return false
