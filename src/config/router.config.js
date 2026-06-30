@@ -50,6 +50,12 @@ export const asyncRouterMap = [
         meta: { title: '小程序Banner管理', keepAlive: true }
       },
       {
+        path: '/system/wechatUser',
+        name: 'WechatUserList',
+        component: () => import('@/views/system/WechatUserList'),
+        meta: { title: '微信用户管理', keepAlive: true }
+      },
+      {
         path: '/system/dict/type',
         name: 'DictTypeList',
         component: () => import('@/views/system/DictTypeList'),
