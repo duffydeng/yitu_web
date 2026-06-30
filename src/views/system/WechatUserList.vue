@@ -166,21 +166,21 @@
             dataIndex: 'age',
             width: 60,
             align: 'center',
-            customRender: (text) => text ?? '-'
+            customRender: (text) => text || '-'
           },
           {
             title: '身高(cm)',
             dataIndex: 'heightCm',
             width: 90,
             align: 'center',
-            customRender: (text) => text ?? '-'
+            customRender: (text) => text || '-'
           },
           {
             title: '体重(kg)',
             dataIndex: 'weightKg',
             width: 90,
             align: 'center',
-            customRender: (text) => text ?? '-'
+            customRender: (text) => text || '-'
           },
           {
             title: '创建时间',

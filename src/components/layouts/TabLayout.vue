@@ -408,6 +408,19 @@
   /*美化弹出Tab样式*/
   .ant-tabs-nav-container {
     margin-top: 0px;
+    overflow-x: auto;
+    white-space: nowrap;
+
+    &::-webkit-scrollbar {
+      height: 0;
+    }
+  }
+
+  .tab-layout-tabs .ant-tabs-tab {
+    white-space: nowrap;
+    min-width: auto;
+    display: inline-flex;
+    align-items: center;
   }
 
   /* 修改 ant-tabs 样式 */
@@ -428,9 +441,12 @@
 
     &.ant-tabs-card .ant-tabs-tab {
 
-      padding: 0 24px !important;
+      padding: 0 16px !important;
       background-color: white !important;
-      margin-right: 10px !important;
+      margin-right: 4px !important;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
 
       .ant-tabs-close-x {
         width: 12px !important;
@@ -439,9 +455,11 @@
         cursor: pointer !important;
         font-size: 12px !important;
         margin: 0 !important;
-        position: absolute;
-        top: 36%;
-        right: 6px;
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-left: 6px !important;
+        flex-shrink: 0;
       }
 
       &:hover .ant-tabs-close-x {

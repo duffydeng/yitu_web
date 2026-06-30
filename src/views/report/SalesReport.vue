@@ -1,7 +1,7 @@
 <template>
   <a-row :gutter="24">
     <a-col :md="24">
-      <a-card :style="cardStyle" :bordered="false">
+      <a-card :bordered="false">
         <!-- 查询区域 -->
         <div class="table-page-search-wrapper">
           <a-form layout="inline" @keyup.enter.native="searchQuery">
@@ -37,7 +37,7 @@
             :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="false"
-            :scroll="{x: 1000}"
+            :scroll="{x: 840}"
             :loading="loading">
           </a-table>
         </section>
@@ -71,7 +71,6 @@
     },
     data() {
       return {
-        cardStyle: { margin: '-24px -24px 0px' },
         labelCol: { span: 6 },
         wrapperCol: { span: 18 },
         loading: false,
@@ -89,7 +88,12 @@
             customRender: (text, record, index) => (this.currentPage - 1) * this.pageSize + index + 1 },
           { title: '车型', dataIndex: 'productName', width: 180 },
           { title: '销售台数', dataIndex: 'totalQuantity', width: 100, align: 'right' },
-          { title: '各代理商销量', dataIndex: 'dealerBreakdown', width: 350 },
+          { title: '各代理商销量', dataIndex: 'dealerBreakdown', width: 350,
+            customRender: (text) => {
+              if (!text) return ''
+              return this.$createElement('div', { style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' } }, text)
+            }
+          },
           { title: '销售总金额', dataIndex: 'totalAmount', width: 150, align: 'right',
             customRender: (text) => {
               return text ? text.toFixed(2) : '0.00'
@@ -220,4 +224,12 @@
 
 <style scoped>
   @import '~@assets/less/common.less';
+</style>
+<style>
+  /* 修复表格列宽不对齐问题 */
+  .ant-table-fixed-header .ant-table-thead > tr > th,
+  .ant-table-fixed-header .ant-table-tbody > tr > td {
+    word-break: break-all;
+    white-space: normal;
+  }
 </style>
