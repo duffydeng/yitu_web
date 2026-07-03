@@ -1,7 +1,7 @@
 <template>
   <a-row :gutter="24">
     <a-col :md="24">
-      <a-card :style="cardStyle" :bordered="false">
+      <a-card :bordered="false">
         <!-- 查询区域 -->
         <div class="table-page-search-wrapper">
           <a-form layout="inline" @keyup.enter.native="searchQuery">
@@ -42,7 +42,7 @@
             :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="false"
-            :scroll="{x: 1000}"
+            :scroll="{x: 1100}"
             :loading="loading">
           </a-table>
         </section>
@@ -75,7 +75,6 @@
     },
     data() {
       return {
-        cardStyle: { margin: '-24px -24px 0px' },
         labelCol: { span: 6 },
         wrapperCol: { span: 18 },
         loading: false,
@@ -226,4 +225,12 @@
 
 <style scoped>
   @import '~@assets/less/common.less';
+</style>
+<style>
+  /* 修复表格列宽不对齐问题 */
+  .ant-table-fixed-header .ant-table-thead > tr > th,
+  .ant-table-fixed-header .ant-table-tbody > tr > td {
+    word-break: break-all;
+    white-space: normal;
+  }
 </style>

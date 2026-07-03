@@ -529,6 +529,10 @@
         if (Array.isArray(param.categoryIds)) {
           param.categoryIds = param.categoryIds.join(',');
         }
+        // 如果有选中行，将 id 作为条件传给后端
+        if (this.selectedRowKeys.length > 0) {
+          param.ids = this.selectedRowKeys.join(',');
+        }
         downFile(this.url.exportLabelUrl, param).then((data) => {
           if (!data) {
             this.$message.warning('文件下载失败');
