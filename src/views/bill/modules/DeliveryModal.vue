@@ -24,10 +24,11 @@
           >
             <a-select-option value="deppon">德邦</a-select-option>
             <a-select-option value="sfExpress">顺丰</a-select-option>
-            <a-select-option value="ztoTran">中通</a-select-option>
+            <a-select-option value="zhongtong">中通</a-select-option>
+            <a-select-option value="zhongtongkuaiyun">中通快运</a-select-option>
           </a-select>
         </a-form-model-item>
-        
+
         <a-form-model-item label="快递单号">
           <a-input
             v-model="model.expressNumber"
@@ -108,7 +109,7 @@ export default {
             expressCompanyName: this.model.expressCompanyName,
             expressNumber: this.model.expressNumber
           }
-          
+
           postAction(this.url.delivery, params)
             .then(res => {
               if (res.code === 200) {
