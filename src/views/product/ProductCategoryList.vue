@@ -53,6 +53,8 @@
           <a-button @click="batchDel" icon="delete">删除</a-button>
           <a-button @click="handleAddBarCodeDetail" icon="barcode">新增条码明细</a-button>
           <a-button @click="handleDeepCopy" icon="copy" :loading="copyLoading">一键复制</a-button>
+          <a-button @click="handleDownloadTemplate" icon="download">下载关联条码模版</a-button>
+          <a-button @click="handleImportXls" icon="import">导入</a-button>
         </div>
 
         <div>
@@ -98,6 +100,7 @@
         <product-category-modal ref="modalForm" @ok="modalFormOk"></product-category-modal>
         <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
         <j-select-product-modal ref="selectProductModal" :multi="true" @ok="onSelectProductOK" />
+        <import-file-modal ref="modalImportForm" @ok="modalFormOk"></import-file-modal>
 
         <!-- 查看明细弹窗 -->
         <a-modal
@@ -273,9 +276,10 @@
 <script>
   import ProductCategoryModal from './modules/ProductCategoryModal'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
-  import { httpAction, getAction, deleteAction, getFileAccessHttpUrl } from '@/api/manage'
+  import { httpAction, getAction, deleteAction, getFileAccessHttpUrl, downFile } from '@/api/manage'
   import JSelectMaterialModal from '@/components/jeecgbiz/modal/JSelectMaterialModal'
   import JSelectProductModal from '@/components/jeecgbiz/modal/JSelectProductModal'
+  import ImportFileModal from '@/components/tools/ImportFileModal'
 
   export default {
     name: 'ProductCategoryList',
@@ -283,7 +287,8 @@
     components: {
       ProductCategoryModal,
       JSelectMaterialModal,
-      JSelectProductModal
+      JSelectProductModal,
+      ImportFileModal
     },
     data () {
       return {
@@ -799,6 +804,36 @@
             this.$message.warning((res && res.message) || '删除失败')
           }
         })
+      },
+      // 下载关联条码模板
+      handleDownloadTemplate () {
+        downFile('/materialRelation/importTemplate', {}).then((data) => {
+          if (!data) {
+            this.$message.warning('模板下载失败')
+            return
+          }
+          const blob = new Blob([data], { type: 'application/vnd.ms-excel' })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.style.display = 'none'
+          link.href = url
+          link.setAttribute('download', '关联条码模板.xls')
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+          this.$message.success('模板下载成功')
+        }).catch(() => {
+          this.$message.error('模板下载失败')
+        })
+      },
+      // 打开导入弹窗
+      handleImportXls () {
+        let importExcelUrl = '/materialRelation/importExcel'
+        let templateUrl = '/materialRelation/importTemplate'
+        let templateName = '关联条码Excel模板[下载]'
+        this.$refs.modalImportForm.initModal(importExcelUrl, templateUrl, templateName)
+        this.$refs.modalImportForm.title = '关联条码导入'
       }
     }
   }
