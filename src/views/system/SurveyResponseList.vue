@@ -73,7 +73,9 @@
           <template v-if="detailModal.record">
             <a-descriptions bordered :column="2" size="small" style="margin-bottom:16px;">
               <a-descriptions-item label="用户名称">{{ detailModal.record.userName || '-' }}</a-descriptions-item>
-              <a-descriptions-item label="订单编号">{{ detailModal.record.orderCode || '-' }}</a-descriptions-item>
+              <a-descriptions-item label="订单编号">{{ detailModal.record.orderNumber || detailModal.record.orderCode || '-' }}</a-descriptions-item>
+              <a-descriptions-item label="车型">{{ detailModal.record.productName || '-' }}</a-descriptions-item>
+              <a-descriptions-item label="客户姓名">{{ detailModal.record.customerName || '-' }}</a-descriptions-item>
               <a-descriptions-item label="提交时间" :span="2">{{ formatDateTime(detailModal.record.submitTime) }}</a-descriptions-item>
               <a-descriptions-item label="IP地址" :span="2">{{ detailModal.record.ipAddress || '-' }}</a-descriptions-item>
             </a-descriptions>
@@ -137,8 +139,21 @@
           },
           {
             title: '订单编号',
-            dataIndex: 'orderCode',
-            width: 160
+            dataIndex: 'orderNumber',
+            width: 160,
+            customRender: (text, record) => text || record.orderCode || '-'
+          },
+          {
+            title: '车型',
+            dataIndex: 'productName',
+            width: 160,
+            customRender: text => text || '-'
+          },
+          {
+            title: '客户姓名',
+            dataIndex: 'customerName',
+            width: 120,
+            customRender: text => text || '-'
           },
           {
             title: '提交时间',
