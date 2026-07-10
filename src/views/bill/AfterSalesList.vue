@@ -138,13 +138,42 @@
                 <a-descriptions-item label="申请原因" :span="2">{{ detailModal.data.reason }}</a-descriptions-item>
                 <a-descriptions-item label="处理备注" :span="2">{{ detailModal.data.handlerRemark }}</a-descriptions-item>
                 <a-descriptions-item label="处理时间">{{ detailModal.data.handledTime }}</a-descriptions-item>
-                <a-descriptions-item label="创建时间">{{ detailModal.data.createTime }}</a-descriptions-item>
+                <a-descriptions-item label="评价时间">{{ detailModal.data.ratedTime }}</a-descriptions-item>
+                <a-descriptions-item label="评价类型">{{ detailModal.data.ratingType }}</a-descriptions-item>
+                <a-descriptions-item label="评分">{{ detailModal.data.rating }}</a-descriptions-item>
+                <a-descriptions-item label="评价内容" :span="2">{{ detailModal.data.ratingContent }}</a-descriptions-item>
+                <a-descriptions-item label="创建时间">{{ formatDateTime(detailModal.data.createTime) }}</a-descriptions-item>
+                <a-descriptions-item label="更新时间">{{ formatDateTime(detailModal.data.updateTime) }}</a-descriptions-item>
               </a-descriptions>
-              <template v-if="detailModal.data.images">
+              <template v-if="displayImages(detailModal.data.images).length">
                 <a-divider>凭证图片</a-divider>
                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
                   <a
-                    v-for="(img, idx) in detailModal.data.images.split(',')"
+                    v-for="(img, idx) in displayImages(detailModal.data.images)"
+                    :key="idx"
+                    :href="getImgUrl(img)"
+                    target="_blank">
+                    <img :src="getImgUrl(img)" style="width:120px;height:90px;object-fit:cover;border:1px solid #eee;border-radius:4px;" />
+                  </a>
+                </div>
+              </template>
+              <template v-if="displayImages(detailModal.data.handlerImages).length">
+                <a-divider>处理图片</a-divider>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                  <a
+                    v-for="(img, idx) in displayImages(detailModal.data.handlerImages)"
+                    :key="idx"
+                    :href="getImgUrl(img)"
+                    target="_blank">
+                    <img :src="getImgUrl(img)" style="width:120px;height:90px;object-fit:cover;border:1px solid #eee;border-radius:4px;" />
+                  </a>
+                </div>
+              </template>
+              <template v-if="displayImages(detailModal.data.ratingImages).length">
+                <a-divider>评价图片</a-divider>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                  <a
+                    v-for="(img, idx) in displayImages(detailModal.data.ratingImages)"
                     :key="idx"
                     :href="getImgUrl(img)"
                     target="_blank">
@@ -271,7 +300,7 @@ export default {
         },
         { title: '商品名称', dataIndex: 'materialName', width: 160, ellipsis: true },
         { title: '商品规格', dataIndex: 'materialModel', width: 120 },
-        { title: '商品颜色', dataIndex: 'materialColor', width: 100 },
+        { title: '经销商', dataIndex: 'organizationName', width: 150, ellipsis: true },
         { title: '申请原因', dataIndex: 'reason', width: 180, ellipsis: true },
         { title: '联系人', dataIndex: 'contactName', width: 100 },
         { title: '联系电话', dataIndex: 'contactPhone', width: 120 },
@@ -293,13 +322,13 @@ export default {
           title: '创建时间',
           dataIndex: 'createTime',
           width: 130,
-          customRender: text => (!text ? '' : text.substring(0, 10))
+          customRender: text => this.formatDateTime(text)
         },
         {
           title: '更新时间',
           dataIndex: 'updateTime',
           width: 130,
-          customRender: text => (!text ? '' : text.substring(0, 10))
+          customRender: text => this.formatDateTime(text)
         }
       ],
       detailModal: {
@@ -383,7 +412,7 @@ export default {
       this.detailModal.loading = true
       getAction('/afterSales/info', { id: record.id }).then(res => {
         if (res && res.code === 200) {
-          this.detailModal.data = res.data || null
+          this.detailModal.data = this.getAfterSalesInfo(res)
         } else {
           this.$message.warning((res && res.message) || '获取详情失败')
         }
@@ -392,12 +421,43 @@ export default {
       })
     },
     previewImages(images) {
-      this.previewModal.images = images.split(',').filter(Boolean).map(img => this.getImgUrl(img))
+      this.previewModal.images = this.displayImages(images)
       this.previewModal.visible = true
+    },
+    getAfterSalesInfo(res) {
+      if (!res || !res.data) return null
+      return res.data.info || res.data
+    },
+    displayImages(images) {
+      if (!images) return []
+      return String(images).split(',').map(img => img.trim()).filter(Boolean)
+    },
+    formatDateTime(value) {
+      if (!value) return ''
+      if (typeof value === 'number') {
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) return ''
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+      return String(value).substring(0, 10)
     },
     getImgUrl(url) {
       if (!url) return ''
-      return getFileAccessHttpUrl(url)
+      const path = String(url).trim()
+      if (!path) return ''
+      if (/^https?:\/\//i.test(path)) return path
+      if (path.startsWith('tencent/')) {
+        return 'https://bsbq-1395727345.cos.ap-guangzhou.myqcloud.com/erp/' + path
+      }
+      if (path.startsWith('/tencent/')) {
+        return 'https://bsbq-1395727345.cos.ap-guangzhou.myqcloud.com/erp' + path
+      }
+      if (path.startsWith('/images/')) return path
+      if (path.startsWith('images/')) return '/' + path
+      return getFileAccessHttpUrl(path)
     },
     handleEdit(record) {
       this.editModal.record = record
