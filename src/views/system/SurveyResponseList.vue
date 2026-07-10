@@ -56,6 +56,10 @@
             <template slot="submitTimeRender" slot-scope="val">
               {{ formatDateTime(val) }}
             </template>
+            <!-- 购买时间 -->
+            <template slot="purchaseTimeRender" slot-scope="val">
+              {{ formatDateTime(val) }}
+            </template>
             <!-- 操作列 -->
             <span slot="action" slot-scope="text, record">
               <a @click="handleDetail(record)">查看详情</a>
@@ -74,9 +78,11 @@
             <a-descriptions bordered :column="2" size="small" style="margin-bottom:16px;">
               <a-descriptions-item label="用户名称">{{ detailModal.record.userName || '-' }}</a-descriptions-item>
               <a-descriptions-item label="订单编号">{{ detailModal.record.orderNumber || detailModal.record.orderCode || '-' }}</a-descriptions-item>
+              <a-descriptions-item label="经销商">{{ detailModal.record.dealerName || '-' }}</a-descriptions-item>
               <a-descriptions-item label="车型">{{ detailModal.record.productName || '-' }}</a-descriptions-item>
               <a-descriptions-item label="客户姓名">{{ detailModal.record.customerName || '-' }}</a-descriptions-item>
-              <a-descriptions-item label="提交时间" :span="2">{{ formatDateTime(detailModal.record.submitTime) }}</a-descriptions-item>
+              <a-descriptions-item label="购买时间">{{ formatDateTime(detailModal.record.purchaseTime) }}</a-descriptions-item>
+              <a-descriptions-item label="提交时间">{{ formatDateTime(detailModal.record.submitTime) }}</a-descriptions-item>
               <a-descriptions-item label="IP地址" :span="2">{{ detailModal.record.ipAddress || '-' }}</a-descriptions-item>
             </a-descriptions>
 
@@ -115,7 +121,7 @@
       return {
         labelCol: { span: 6 },
         wrapperCol: { span: 18 },
-        scroll: { x: 1000 },
+        scroll: { x: 1240 },
         submitTimeRange: [],
         queryParam: {
           orderCode: '',
@@ -144,6 +150,12 @@
             customRender: (text, record) => text || record.orderCode || '-'
           },
           {
+            title: '经销商',
+            dataIndex: 'dealerName',
+            width: 150,
+            customRender: text => text || '-'
+          },
+          {
             title: '车型',
             dataIndex: 'productName',
             width: 160,
@@ -154,6 +166,13 @@
             dataIndex: 'customerName',
             width: 120,
             customRender: text => text || '-'
+          },
+          {
+            title: '购买时间',
+            dataIndex: 'purchaseTime',
+            width: 160,
+            align: 'center',
+            scopedSlots: { customRender: 'purchaseTimeRender' }
           },
           {
             title: '提交时间',

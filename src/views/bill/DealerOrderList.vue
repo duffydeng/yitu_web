@@ -302,7 +302,7 @@
           { title: '更新时间', dataIndex: 'updateTime'}
         ],
 				// 默认索引
-        defDataIndex:["action","orderNumber","orderStatus","organizationName","customerName","customerPhone","productName","totalPrice","deposit","deductStock","createTime","updateTime","planFinishTime","actualFinishTime","productionPerson","afterSaleContact","expressCompanyName","expressNumber","receivePerson","receivePhone","receiveAddressDetail","qualityInspector","qualityInspectionTime","deliveryTime","collectionTime","signOffTime","activateFlag"],
+        defDataIndex:["action","orderNumber","orderStatus","organizationName","customerName","customerPhone","productName","totalPrice","deposit","deductStock","createTime","updateTime","planFinishTime","actualFinishTime","productionPerson","activateFlag","activateTime","afterSaleContact","expressCompanyName","expressNumber","receivePerson","receivePhone","receiveAddressDetail","qualityInspector","qualityInspectionTime","deliveryTime","collectionTime","signOffTime"],
         // 默认列
         defColumns: [
           {
@@ -346,6 +346,11 @@
           { title: '激活状态', dataIndex: 'activateFlag', width: 100, align: "center",
             scopedSlots: { customRender: 'activateFlagRender' }
           },
+          { title: '激活时间', dataIndex: 'activateTime', width: 150,
+            customRender:function (text) {
+              return !text?"":text.substring(0,10)
+            }
+          },
           { title: '售后联系人', dataIndex: 'afterSaleContact',width:100, ellipsis:true},
           { title: '快递公司', dataIndex: 'expressCompanyName',width:120},
           { title: '快递单号', dataIndex: 'expressNumber',width:150},
@@ -374,7 +379,7 @@
             }
           }
         ],
-        scroll: { x: 3310 },
+        scroll: { x: 3460 },
         attachmentModal: {
           visible: false,
           loading: false,
