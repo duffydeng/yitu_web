@@ -82,6 +82,7 @@
           <a-button @click="handleAssemble" type="primary" icon="check">完工</a-button>
           <a-button @click="handleQualityCheck" type="primary" icon="safety">质检完成</a-button>
           <a-button @click="handleDelivery" type="primary" icon="car">发货</a-button>
+          <a-button v-if="btnEnableList.indexOf(1)>-1" @click="batchDel" icon="delete">批量删除</a-button>
 <!--          <a-button @click="handleDeductStock" type="primary" icon="minus-circle">扣减库存</a-button>-->
           <a-button v-if="isShowExcel && btnEnableList.indexOf(3)>-1" icon="download" @click="handleExport">导出</a-button>
           <a-button icon="file-excel" @click="downloadCustomOrder">下载定制单</a-button>
