@@ -55,6 +55,7 @@
           <a-button @click="handleDeepCopy" icon="copy" :loading="copyLoading">一键复制</a-button>
           <a-button @click="handleDownloadTemplate" icon="download">下载关联条码模版</a-button>
           <a-button @click="handleImportXls" icon="import">导入</a-button>
+          <a-button @click="handleExportProductBarCodes" icon="download">导出产品下条码</a-button>
         </div>
 
         <div>
@@ -825,6 +826,31 @@
           this.$message.success('模板下载成功')
         }).catch(() => {
           this.$message.error('模板下载失败')
+        })
+      },
+      handleExportProductBarCodes () {
+        if (!this.selectedRowKeys || this.selectedRowKeys.length === 0) {
+          this.$message.warning('请选择需要导出的产品记录')
+          return
+        }
+        downFile('/materialRelation/exportProductBarCodes', { ids: this.selectedRowKeys.join(',') }).then((data) => {
+          if (!data) {
+            this.$message.warning('导出失败')
+            return
+          }
+          const blob = new Blob([data], { type: 'application/vnd.ms-excel' })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.style.display = 'none'
+          link.href = url
+          link.setAttribute('download', '产品下条码.xlsx')
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+          this.$message.success('导出成功')
+        }).catch(() => {
+          this.$message.error('导出失败')
         })
       },
       // 打开导入弹窗
