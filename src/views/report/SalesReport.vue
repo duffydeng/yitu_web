@@ -32,12 +32,12 @@
             bordered
             ref="table"
             size="middle"
-            rowKey="productName"
+            rowKey="id"
             :columns="columns"
             :components="handleDrag(columns)"
             :dataSource="dataSource"
             :pagination="false"
-            :scroll="{x: 840}"
+            :scroll="{x: 1100}"
             :loading="loading">
           </a-table>
         </section>
@@ -86,19 +86,16 @@
         columns: [
           { title: '序号', dataIndex: 'rowIndex', width: 60, align: 'center',
             customRender: (text, record, index) => (this.currentPage - 1) * this.pageSize + index + 1 },
-          { title: '车型', dataIndex: 'productName', width: 180 },
-          { title: '销售台数', dataIndex: 'totalQuantity', width: 100, align: 'right' },
-          { title: '各代理商销量', dataIndex: 'dealerBreakdown', width: 350,
+          { title: '订单编号', dataIndex: 'orderNumber', width: 180 },
+          { title: '经销商', dataIndex: 'dealerName', width: 180 },
+          { title: '客户', dataIndex: 'customerName', width: 140 },
+          { title: '车型', dataIndex: 'productName', width: 160 },
+          { title: '订单金额', dataIndex: 'amount', width: 120, align: 'right',
             customRender: (text) => {
-              if (!text) return ''
-              return this.$createElement('div', { style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' } }, text)
+              return text ? Number(text).toFixed(2) : '0.00'
             }
           },
-          { title: '销售总金额', dataIndex: 'totalAmount', width: 150, align: 'right',
-            customRender: (text) => {
-              return text ? text.toFixed(2) : '0.00'
-            }
-          }
+          { title: '订单创建时间', dataIndex: 'createTime', width: 180 }
         ]
       }
     },
@@ -185,10 +182,17 @@
           return
         }
         let list = []
-        let head = '车型,销售台数,各代理商销量,销售总金额'
+        let head = '订单编号,经销商,客户,车型,订单金额,订单创建时间'
         for (let i = 0; i < this.dataSource.length; i++) {
           let ds = this.dataSource[i]
-          list.push([ds.productName, ds.totalQuantity, ds.dealerBreakdown, ds.totalAmount ? ds.totalAmount.toFixed(2) : '0.00'])
+          list.push([
+            ds.orderNumber,
+            ds.dealerName,
+            ds.customerName,
+            ds.productName,
+            ds.amount ? Number(ds.amount).toFixed(2) : '0.00',
+            ds.createTime
+          ])
         }
         let tip = '日期区间：' + this.queryParam.beginTime.format('YYYY-MM-DD') + '~' + this.queryParam.endTime.format('YYYY-MM-DD')
         this.handleExportXlsPost('销售报表', '销售报表', head, tip, list)
