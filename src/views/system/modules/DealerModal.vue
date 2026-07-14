@@ -48,11 +48,11 @@
           <a-row class="form-row" :gutter="24">
             <a-col :span="24/2">
               <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="提成比例(%)">
-                <a-input-number 
-                  style="width:100%" 
-                  placeholder="请输入提成比例" 
-                  :min="0" 
-                  :max="100" 
+                <a-input-number
+                  style="width:100%"
+                  placeholder="请输入提成比例"
+                  :min="0"
+                  :max="100"
                   :precision="2"
                   v-decorator.trim="[ 'commissionDecimal', validatorRules.commissionDecimal]" />
               </a-form-item>
@@ -69,8 +69,8 @@
           <a-row class="form-row" :gutter="24">
             <a-col :span="24/2">
               <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="父经销商">
-                <a-select 
-                  v-decorator="[ 'parentId' ]" 
+                <a-select
+                  v-decorator="[ 'parentId' ]"
                   placeholder="请选择父经销商"
                   allow-clear
                   showSearch
@@ -278,7 +278,7 @@
         parentDealerList: [],
         url: {
           add: "/dealer/add",
-          edit: "/dealer/edit",
+          edit: "/dealer/update",
           checkLoginName: "/dealer/checkLoginName"
         }
       }
