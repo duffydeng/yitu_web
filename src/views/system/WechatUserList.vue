@@ -46,7 +46,7 @@
         <a-table
           ref="table"
           size="middle"
-          :scroll="{ x: 1200 }"
+          :scroll="{ x: 1340 }"
           bordered
           rowKey="id"
           :columns="columns"
@@ -153,6 +153,13 @@
             width: 100,
             align: 'center',
             scopedSlots: { customRender: 'role' }
+          },
+          {
+            title: '代理',
+            dataIndex: 'dealerName',
+            width: 140,
+            align: 'center',
+            customRender: (text) => text || '-'
           },
           {
             title: '性别',
