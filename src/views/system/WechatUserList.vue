@@ -80,6 +80,8 @@
           <span slot="action" slot-scope="text, record">
             <a @click="handleEdit(record)">编辑</a>
             <a-divider type="vertical" />
+            <a @click="handleDealerChangeLog(record)">经销商更换记录</a>
+            <a-divider type="vertical" />
             <a-popconfirm title="确认删除？" @confirm="handleDelete(record)">
               <a style="color:#f5222d;">删除</a>
             </a-popconfirm>
@@ -89,11 +91,29 @@
     </a-col>
 
     <wechat-user-modal ref="modalForm" @ok="modalFormOk"></wechat-user-modal>
+    <a-modal
+      title="经销商更换记录"
+      :visible="dealerChangeLogVisible"
+      :footer="null"
+      :width="760"
+      @cancel="dealerChangeLogVisible = false"
+    >
+      <a-table
+        size="small"
+        bordered
+        rowKey="id"
+        :columns="dealerChangeLogColumns"
+        :dataSource="dealerChangeLogData"
+        :loading="dealerChangeLogLoading"
+        :pagination="false"
+      />
+    </a-modal>
   </a-row>
 </template>
 
 <script>
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
+  import { getAction } from '@/api/manage'
   import WechatUserModal from './modules/WechatUserModal'
 
   export default {
@@ -199,15 +219,49 @@
           {
             title: '操作',
             dataIndex: 'action',
-            width: 120,
+            width: 240,
             align: 'center',
             scopedSlots: { customRender: 'action' }
+          }
+        ],
+        dealerChangeLogVisible: false,
+        dealerChangeLogLoading: false,
+        dealerChangeLogData: [],
+        dealerChangeLogColumns: [
+          {
+            title: '变更类型',
+            dataIndex: 'changeType',
+            width: 120,
+            align: 'center',
+            customRender: (text) => text === 'INITIAL_BIND' ? '首次绑定' : '更换经销商'
+          },
+          {
+            title: '原经销商',
+            dataIndex: 'oldDealerName',
+            width: 180,
+            align: 'center',
+            customRender: (text) => text || '-'
+          },
+          {
+            title: '新经销商',
+            dataIndex: 'newDealerName',
+            width: 180,
+            align: 'center',
+            customRender: (text) => text || '-'
+          },
+          {
+            title: '操作时间',
+            dataIndex: 'operationTime',
+            width: 180,
+            align: 'center',
+            customRender: (text) => text ? text.replace('T', ' ').substring(0, 19) : '-'
           }
         ],
         url: {
           list: '/wechatUser/list',
           delete: '/wechatUser/delete',
-          deleteBatch: '/wechatUser/deleteBatch'
+          deleteBatch: '/wechatUser/deleteBatch',
+          dealerChangeLogList: '/wechatUser/dealerChangeLog/list'
         }
       }
     },
@@ -219,6 +273,20 @@
       handleEdit(record) {
         this.$refs.modalForm.edit(record)
         this.$refs.modalForm.title = '编辑微信用户'
+      },
+      handleDealerChangeLog(record) {
+        this.dealerChangeLogVisible = true
+        this.dealerChangeLogLoading = true
+        this.dealerChangeLogData = []
+        getAction(this.url.dealerChangeLogList, { userId: record.id }).then((res) => {
+          if (res && res.code === 200) {
+            this.dealerChangeLogData = res.data && res.data.rows ? res.data.rows : []
+          } else {
+            this.$message.warning((res && res.data && res.data.message) || '经销商更换记录加载失败')
+          }
+        }).finally(() => {
+          this.dealerChangeLogLoading = false
+        })
       }
     }
   }
