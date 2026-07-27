@@ -53,9 +53,9 @@
           <a-button @click="batchDel" icon="delete">删除</a-button>
           <a-button @click="handleAddBarCodeDetail" icon="barcode">新增条码明细</a-button>
           <a-button @click="handleDeepCopy" icon="copy" :loading="copyLoading">一键复制</a-button>
-          <a-button @click="handleDownloadTemplate" icon="download">下载关联条码模版</a-button>
+          <a-button @click="handleOpenCopyRelationModal" icon="copy">复制关联条码</a-button>
           <a-button @click="handleImportXls" icon="import">导入</a-button>
-          <a-button @click="handleExportProductBarCodes" icon="download">导出产品下条码</a-button>
+
         </div>
 
         <div>
@@ -102,6 +102,51 @@
         <j-select-material-modal ref="selectMaterialModal" :multi="true" @ok="selectMaterialOK" />
         <j-select-product-modal ref="selectProductModal" :multi="true" @ok="onSelectProductOK" />
         <import-file-modal ref="modalImportForm" @ok="modalFormOk"></import-file-modal>
+
+        <!-- 复制关联条码弹窗 -->
+        <a-modal
+          v-model="copyRelationModal.visible"
+          title="复制关联条码"
+          width="560px"
+          :confirmLoading="copyRelationModal.loading"
+          @ok="handleCopyRelationSubmit"
+          @cancel="handleCopyRelationCancel"
+          destroyOnClose>
+          <a-form>
+            <a-form-item label="源产品" :labelCol="labelCol" :wrapperCol="wrapperCol">
+              <a-select
+                v-model="copyRelationModal.sourceProductId"
+                show-search
+                allow-clear
+                placeholder="请选择源产品（父产品/产品）"
+                optionFilterProp="children"
+                :loading="copyRelationModal.optionLoading">
+                <a-select-option
+                  v-for="item in copyRelationModal.productOptions"
+                  :key="'source-' + item.id"
+                  :value="item.id">
+                  {{ formatProductOption(item) }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="目标产品" :labelCol="labelCol" :wrapperCol="wrapperCol">
+              <a-select
+                v-model="copyRelationModal.targetProductId"
+                show-search
+                allow-clear
+                placeholder="请选择目标产品（父产品/产品）"
+                optionFilterProp="children"
+                :loading="copyRelationModal.optionLoading">
+                <a-select-option
+                  v-for="item in copyRelationModal.productOptions"
+                  :key="'target-' + item.id"
+                  :value="item.id">
+                  {{ formatProductOption(item) }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-form>
+        </a-modal>
 
         <!-- 查看明细弹窗 -->
         <a-modal
@@ -345,6 +390,14 @@
         },
         currentProductId: '',
         copyLoading: false,
+        copyRelationModal: {
+          visible: false,
+          loading: false,
+          optionLoading: false,
+          sourceProductId: undefined,
+          targetProductId: undefined,
+          productOptions: []
+        },
         detailModal: {
           visible: false,
           title: '',
@@ -371,6 +424,7 @@
           pageSize: 10,
           current: 1,
           productMaterialId: '',
+          barCode: '',
           editingId: '',
           editingRecord: {},
           columns: [
@@ -504,6 +558,67 @@
           }
         }).finally(() => {
           this.copyLoading = false
+        })
+      },
+      handleOpenCopyRelationModal () {
+        this.copyRelationModal.visible = true
+        this.copyRelationModal.sourceProductId = this.selectedRowKeys && this.selectedRowKeys.length === 1
+          ? this.selectedRowKeys[0]
+          : undefined
+        this.copyRelationModal.targetProductId = undefined
+        this.loadCopyRelationProductOptions()
+      },
+      handleCopyRelationCancel () {
+        this.copyRelationModal.visible = false
+        this.copyRelationModal.loading = false
+      },
+      loadCopyRelationProductOptions () {
+        this.copyRelationModal.optionLoading = true
+        getAction('/product/list', {
+          search: JSON.stringify({ pageNo: 1, pageSize: 1000 })
+        }).then((res) => {
+          if (res && res.code === 200) {
+            let data = res.data
+            this.copyRelationModal.productOptions = Array.isArray(data) ? data : ((data && data.rows) || [])
+          } else {
+            this.copyRelationModal.productOptions = []
+          }
+        }).finally(() => {
+          this.copyRelationModal.optionLoading = false
+        })
+      },
+      formatProductOption (record) {
+        if (!record) {
+          return ''
+        }
+        let parentName = record.parentName || '无父产品'
+        return parentName + '/' + (record.name || '')
+      },
+      handleCopyRelationSubmit () {
+        let { sourceProductId, targetProductId } = this.copyRelationModal
+        if (!sourceProductId || !targetProductId) {
+          this.$message.warning('请选择源产品和目标产品！')
+          return
+        }
+        if (sourceProductId === targetProductId) {
+          this.$message.warning('源产品和目标产品不能相同！')
+          return
+        }
+        this.copyRelationModal.loading = true
+        httpAction('/materialRelation/copyByProductId', {
+          sourceProductId,
+          targetProductId
+        }, 'post').then((res) => {
+          if (res && res.code === 200) {
+            let count = (res.data && res.data.count) || 0
+            this.$message.success('复制成功，共' + count + '条')
+            this.copyRelationModal.visible = false
+            this.loadData()
+          } else {
+            this.$message.warning((res && res.message) || '复制失败')
+          }
+        }).finally(() => {
+          this.copyRelationModal.loading = false
         })
       },
       handleAddBarCodeDetail () {
@@ -735,6 +850,7 @@
       // 打开联动明细弹窗
       handleOpenRelationDetail (record) {
         this.relationDetailModal.productMaterialId = record.id
+        this.relationDetailModal.barCode = record.barCode
         this.relationDetailModal.title = '联动明细 - ' + (record.barCode || record.materialName || record.id)
         this.relationDetailModal.current = 1
         this.relationDetailModal.editingId = ''
@@ -744,10 +860,10 @@
       },
       // 加载联动明细数据
       loadRelationDetailData () {
-        let { productMaterialId, current, pageSize } = this.relationDetailModal
+        let { productMaterialId, barCode, current, pageSize } = this.relationDetailModal
         this.relationDetailModal.loading = true
         getAction('/materialRelation/list', {
-          search: JSON.stringify({ productMaterialId }),
+          search: JSON.stringify({ productMaterialId, barCode }),
           currentPage: current,
           pageSize
         }).then((res) => {
