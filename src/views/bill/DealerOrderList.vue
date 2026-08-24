@@ -132,6 +132,8 @@
             <span slot="action" slot-scope="text, record">
               <a @click="handleEdit(record)">编辑</a>
               <a-divider type="vertical" />
+              <a @click="handleActivationCode(record)">激活码</a>
+              <a-divider type="vertical" />
               <a @click="handleViewAttachment(record)">完工图 </a>
             </span>
 			<template slot="customRenderStatus" slot-scope="status">
@@ -172,6 +174,28 @@
         <delivery-modal ref="deliveryModal" @ok="modalFormOk"></delivery-modal>
         <bill-detail ref="modalDetail" @ok="modalFormOk" @close="modalFormClose"></bill-detail>
         <bill-excel-iframe ref="billExcelIframe" @ok="modalFormOk" @close="modalFormClose"></bill-excel-iframe>
+
+        <a-modal
+          title="修改激活码"
+          :visible="activationCodeModal.visible"
+          :confirmLoading="activationCodeModal.loading"
+          @ok="handleActivationCodeConfirm"
+          @cancel="handleActivationCodeCancel"
+          okText="确认修改"
+          cancelText="取消">
+          <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+            <a-form-item label="订单编号">
+              <a-input v-model="activationCodeModal.orderNumber" disabled />
+            </a-form-item>
+            <a-form-item label="激活码">
+              <a-input
+                v-model="activationCodeModal.activationCode"
+                placeholder="请输入激活码"
+                allow-clear
+                @keyup.enter="handleActivationCodeConfirm" />
+            </a-form-item>
+          </a-form>
+        </a-modal>
 
         <!-- 查看附件弹窗 -->
         <a-modal
@@ -289,6 +313,13 @@
         selectedDepotId: undefined,
         // 仓库列表
         depotList: [],
+        activationCodeModal: {
+          visible: false,
+          loading: false,
+          orderId: undefined,
+          orderNumber: '',
+          activationCode: ''
+        },
         // 明细表头
         detailColumns: [
           { title: '物料名称', dataIndex: 'materialName'},
@@ -302,13 +333,13 @@
           { title: '更新时间', dataIndex: 'updateTime'}
         ],
 				// 默认索引
-        defDataIndex:["action","orderNumber","orderStatus","organizationName","customerName","customerPhone","productName","totalPrice","deposit","deductStock","createTime","updateTime","planFinishTime","actualFinishTime","productionPerson","activateFlag","activateTime","afterSaleContact","expressCompanyName","expressNumber","receivePerson","receivePhone","receiveAddressDetail","qualityInspector","qualityInspectionTime","deliveryTime","collectionTime","signOffTime"],
+        defDataIndex:["action","orderNumber","orderStatus","organizationName","customerName","customerPhone","productName","totalPrice","deposit","deductStock","createTime","updateTime","planFinishTime","actualFinishTime","productionPerson","activateFlag","activateTime","activationCode","afterSaleContact","expressCompanyName","expressNumber","receivePerson","receivePhone","receiveAddressDetail","qualityInspector","qualityInspectionTime","deliveryTime","collectionTime","signOffTime"],
         // 默认列
         defColumns: [
           {
             title: '操作',
             dataIndex: 'action',
-            align:"center", width: 100,
+            align:"center", width: 160,
             scopedSlots: { customRender: 'action' },
           },
           { title: '订单编号', dataIndex: 'orderNumber',width:180},
@@ -351,6 +382,7 @@
               return !text?"":text.substring(0,10)
             }
           },
+          { title: '激活码', dataIndex: 'activationCode', width: 140, ellipsis:true},
           { title: '售后联系人', dataIndex: 'afterSaleContact',width:100, ellipsis:true},
           { title: '快递公司', dataIndex: 'expressCompanyName',width:120},
           { title: '快递单号', dataIndex: 'expressNumber',width:150},
@@ -379,7 +411,7 @@
             }
           }
         ],
-        scroll: { x: 3460 },
+        scroll: { x: 3600 },
         attachmentModal: {
           visible: false,
           loading: false,
@@ -391,7 +423,8 @@
           deleteBatch: "/order/deleteBatch",
           exportXlsUrl: "order/exportXls",
           importExcelUrl: "order/importExcel",
-          deductStock: "/order/deductStock"
+          deductStock: "/order/deductStock",
+          updateActivationCode: "/order/updateActivationCode"
         }
       }
     },
@@ -466,6 +499,48 @@
       },
       handleEdit(record) {
         this.$refs.editModal.show(record)
+      },
+      handleActivationCode(record) {
+        this.activationCodeModal.visible = true
+        this.activationCodeModal.loading = false
+        this.activationCodeModal.orderId = record.id
+        this.activationCodeModal.orderNumber = record.orderNumber || ''
+        this.activationCodeModal.activationCode = record.activationCode || ''
+      },
+      handleActivationCodeCancel() {
+        this.activationCodeModal.visible = false
+        this.activationCodeModal.loading = false
+        this.activationCodeModal.orderId = undefined
+        this.activationCodeModal.orderNumber = ''
+        this.activationCodeModal.activationCode = ''
+      },
+      handleActivationCodeConfirm() {
+        const activationCode = (this.activationCodeModal.activationCode || '').trim()
+        if (!this.activationCodeModal.orderId) {
+          this.$message.warning('订单ID不能为空')
+          return
+        }
+        if (!activationCode) {
+          this.$message.warning('请输入激活码')
+          return
+        }
+        this.activationCodeModal.loading = true
+        postAction(this.url.updateActivationCode, {
+          id: this.activationCodeModal.orderId,
+          activationCode
+        }).then(res => {
+          if (res && res.code === 200) {
+            this.$message.success(res.data || '激活码修改成功')
+            this.handleActivationCodeCancel()
+            this.loadData()
+          } else {
+            this.$message.error((res && (res.data || res.message)) || '激活码修改失败')
+          }
+        }).catch(err => {
+          this.$message.error('激活码修改失败：' + err.message)
+        }).finally(() => {
+          this.activationCodeModal.loading = false
+        })
       },
       handleViewAttachment(record) {
         this.attachmentModal.visible = true
